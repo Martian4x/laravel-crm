@@ -19,6 +19,24 @@ trait BelongsToTenant
                 $model->setAttribute('tenant_id', tenant_id());
             }
         });
+
+        /**
+         * Platform-default rows (NULL tenant_id on shared tables) are
+         * read-only for tenants: without this, one tenant could edit or
+         * delete a default pipeline/role/source for every other tenant.
+         * Returning false aborts the operation.
+         */
+        static::updating(function ($model) {
+            if (tenant_id() && is_null($model->getOriginal('tenant_id'))) {
+                return false;
+            }
+        });
+
+        static::deleting(function ($model) {
+            if (tenant_id() && is_null($model->getOriginal('tenant_id'))) {
+                return false;
+            }
+        });
     }
 
     public function tenant()

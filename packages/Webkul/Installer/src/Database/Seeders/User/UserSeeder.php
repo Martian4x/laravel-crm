@@ -27,6 +27,7 @@ class UserSeeder extends Seeder
             'created_at'      => date('Y-m-d H:i:s'),
             'updated_at'      => date('Y-m-d H:i:s'),
             'status'          => 1,
+            'is_super_admin'  => 1,
             'role_id'         => 1,
             'view_permission' => 'global',
         ]);

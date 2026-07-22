@@ -109,11 +109,16 @@ class InstallerController extends Controller
                 [
                     'id' => self::USER_ID,
                 ], [
-                    'name'     => request()->input('admin'),
-                    'email'    => request()->input('email'),
-                    'password' => $password,
-                    'role_id'  => 1,
-                    'status'   => 1,
+                    'name'           => request()->input('admin'),
+                    'email'          => request()->input('email'),
+                    'password'       => $password,
+                    'role_id'        => 1,
+                    'status'         => 1,
+                    // The installation admin is the platform super admin;
+                    // tenants are created afterwards via azimio:tenant:create
+                    // or the /admin/super/tenants panel.
+                    'is_super_admin' => 1,
+                    'tenant_id'      => null,
                 ]
             );
 

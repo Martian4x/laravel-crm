@@ -90,6 +90,24 @@ it('scopes raw datagrid query builders to the tenant', function () {
     expect($grid->qb->toSql())->toContain('is null');
 });
 
+it('makes platform default rows read-only for tenants', function () {
+    $this->manager->set($this->tenantA);
+
+    $platformPipeline = Pipeline::whereNull('tenant_id')->first();
+
+    $originalName = $platformPipeline->name;
+
+    expect($platformPipeline->update(['name' => 'Hijacked']))->toBeFalse()
+        ->and($platformPipeline->fresh()->name)->toBe($originalName)
+        ->and($platformPipeline->delete())->toBeFalse()
+        ->and(Pipeline::withoutTenancy()->find($platformPipeline->id))->not->toBeNull();
+
+    // A super admin (no tenant context) can still manage platform defaults.
+    $this->manager->forget();
+
+    expect($platformPipeline->fresh()->update(['name' => $originalName]))->toBeTrue();
+});
+
 it('runs unscoped when no tenant context is set', function () {
     $this->manager->set($this->tenantA);
     $person = Person::create(['name' => 'Iso Person A']);

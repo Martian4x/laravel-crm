@@ -210,19 +210,32 @@ Work through the phases in order — each item is scoped to be done (and tested)
       creation is now blocked beyond `max_users`** with a translated message (en/sw).
       **Pending: plan editing in the super-admin panel UI; lead/storage limits;
       manual mobile-money subscription payment recording.**
-- [ ] 5.10 Data residency/backup note: document where data is hosted and daily backup
-      policy — a common procurement question from TZ organizations. (Phase 6 runbook.)
+- [x] 5.10 Data residency + backup policy documented in
+      [DEPLOYMENT.md](DEPLOYMENT.md) (nightly dumps, retention, per-tenant export
+      recipe, procurement statement template).
 
 ## Phase 6 — Hardening & Launch
 
-- [ ] 6.1 Full regression pass per module (Leads, Contacts, Quotes, Products, Mail,
-      Automation, Web Forms, Settings) as a tenant user and as super admin.
-- [ ] 6.2 Performance: add composite indexes `(tenant_id, ...)` on hot query paths.
-- [ ] 6.3 Migration script for any pre-existing single-tenant data → tenant #1.
-- [ ] 6.4 Update installer (`packages/Webkul/Installer`) to create the super admin +
-      first tenant instead of a plain admin.
-- [ ] 6.5 Deployment runbook: env vars, queue workers, scheduler, backups, upgrade
-      procedure that preserves tenancy patches when merging upstream Krayin releases.
+- [x] 6.1 Automated regression smoke (`ModuleSmokeTest`): all 25 module index pages
+      (Leads, Contacts, Quotes, Products, Mail, Activities, all Settings modules,
+      Configuration, Dashboard) render for a tenant admin AND the super admin —
+      51 assertions. **Hardening found & fixed: platform-default rows (shared
+      pipelines/roles/sources/...) were writable by tenants — now read-only for
+      tenant contexts via update/delete guards in `BelongsToTenant` (tested).**
+      **Remaining before launch: a human click-through of create/edit flows per
+      module (automated smoke covers rendering, not every mutation).**
+- [x] 6.2 Composite `(tenant_id, created_at)` indexes on the 7 highest-volume tables
+      (activities, emails, leads, persons, organizations, products, quotes) —
+      migration `2026_07_22_000007`.
+- [x] 6.3 `php artisan azimio:tenant:adopt <id|slug> [--dry-run]`: assigns all orphan
+      (NULL tenant_id) rows in strict business tables to a tenant; skips super
+      admins and never touches shared platform defaults. Dry-run verified live.
+- [x] 6.4 Installer (web wizard, console command, and seeder) now creates the initial
+      admin as **platform super admin** (`is_super_admin = 1`, no tenant); first
+      tenant is then created via the super panel or `azimio:tenant:create`.
+- [x] 6.5 [DEPLOYMENT.md](DEPLOYMENT.md): env vars, first install, tenant management,
+      queue/scheduler/IMAP processes, backups + **data residency note (covers 5.10)**,
+      upstream-merge procedure with conflict hotspots, post-deploy checklist.
 
 ---
 

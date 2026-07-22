@@ -57,6 +57,7 @@ class TenancyServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 \Azimio\Tenancy\Console\Commands\CreateTenant::class,
+                \Azimio\Tenancy\Console\Commands\AdoptOrphanData::class,
             ]);
         }
     }
