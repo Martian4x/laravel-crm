@@ -13,12 +13,17 @@
         <div style="max-width: 640px; margin-left: auto; margin-right: auto;">
             <div style="padding: 30px;">
                 <!-- Email Header -->
+                @php
+                    $tenantLogo = core()->getConfigData('general.general.admin_logo.logo_image');
+                    $brandName = tenant()?->name ?: config('app.name');
+                @endphp
+
                 <div style="margin-bottom: 45px;">
                     <a href="{{ config('app.url') }}">
                         <img
-                            src="{{ vite()->asset('images/logo.svg') }}"
-                            alt="{{ config('app.name') }}"
-                            style="height: 40px; width: 110px;"
+                            src="{{ $tenantLogo ? url(\Illuminate\Support\Facades\Storage::url($tenantLogo)) : vite()->asset('images/logo.svg') }}"
+                            alt="{{ $brandName }}"
+                            style="height: 40px;"
                         />
                     </a>
                 </div>
@@ -28,7 +33,7 @@
 
                 <!-- Email Footer -->
                 <p style="font-size: 16px;color: #202B3C;line-height: 24px;">
-                    @lang('admin::app.emails.common.cheers', ['app_name' => config('app.name')])
+                    @lang('admin::app.emails.common.cheers', ['app_name' => tenant()?->name ?: config('app.name')])
                 </p>
             </div>
         </div>

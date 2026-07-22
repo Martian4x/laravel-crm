@@ -162,7 +162,30 @@
     <body dir="{{ $locale }}">
         <div class="page">
             <!-- Header -->
+            @php
+                $tenantLogo = core()->getConfigData('general.general.admin_logo.logo_image');
+
+                $tenantLogoPath = $tenantLogo ? storage_path('app/public/'.$tenantLogo) : null;
+
+                // Dompdf cannot render SVG images reliably.
+                $tenantLogoRenderable = $tenantLogoPath
+                    && file_exists($tenantLogoPath)
+                    && strtolower(pathinfo($tenantLogoPath, PATHINFO_EXTENSION)) !== 'svg';
+            @endphp
+
             <div class="page-header">
+                @if ($tenantLogoRenderable)
+                    <div class="logo-container">
+                        <img src="{{ $tenantLogoPath }}" style="height: 40px;" alt="" />
+                    </div>
+                @endif
+
+                @if (tenant())
+                    <div style="font-size: 18px; font-weight: bold; margin-bottom: 4px;">
+                        {{ tenant()->name }}
+                    </div>
+                @endif
+
                 <b>@lang('admin::app.quotes.index.pdf.title')</b>
             </div>
 

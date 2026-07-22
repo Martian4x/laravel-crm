@@ -2130,9 +2130,10 @@ return [
                     ],
 
                     'admin-logo' => [
-                        'logo-image' => 'Logo Image',
-                        'title'      => 'Admin Logo',
-                        'title-info' => 'Configure logo image for your admin panel.',
+                        'favicon'    => 'Favikoni',
+                        'logo-image' => 'Picha ya Nembo',
+                        'title'      => 'Nembo ya Kampuni',
+                        'title-info' => 'Sanidi nembo na favikoni ya paneli ya kampuni yako.',
                     ],
                 ],
 

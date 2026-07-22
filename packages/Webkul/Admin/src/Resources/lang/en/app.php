@@ -2130,9 +2130,10 @@ return [
                     ],
 
                     'admin-logo' => [
+                        'favicon'    => 'Favicon',
                         'logo-image' => 'Logo Image',
                         'title'      => 'Admin Logo',
-                        'title-info' => 'Configure logo image for your admin panel.',
+                        'title-info' => 'Configure the logo and favicon for your company\'s panel.',
                     ],
                 ],
 

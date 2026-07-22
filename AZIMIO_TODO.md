@@ -155,11 +155,24 @@ Work through the phases in order — each item is scoped to be done (and tested)
 
 ## Phase 4 — Per-Tenant Custom Branding
 
-- [ ] 4.1 Tenant branding settings page: logo upload, favicon, primary color, app
-      display name, login-page welcome text.
-- [ ] 4.2 Inject branding into admin layout (menu logo, page titles) and login screen;
-      fall back to AzimioCustomers defaults.
-- [ ] 4.3 Per-tenant branding in outgoing emails and quote PDFs (logo + footer).
+- [x] 4.1 Branding settings ride on Krayin's existing Configuration UI
+      (Configuration → General), which is per-tenant since `core_config` became
+      tenant-scoped: logo upload (`admin_logo.logo_image`), **favicon (new field
+      added)**, brand color (`menu_color.brand_color`), footer text, custom CSS.
+      Display name = `tenants.name` (set by super admin). `.env`
+      `FILESYSTEM_DISK` switched local→public so config uploads are web-servable.
+      **Note: the shared login page cannot be tenant-branded — the tenant is unknown
+      before authentication. It carries AzimioCustomers platform branding.**
+- [x] 4.2 Layout injection: page `<title>` gets " — Tenant Name" suffix; header +
+      mobile-sidebar logos use tenant config with AzimioCustomers fallback; logo alt
+      = tenant name; brand color flows through the existing `--brand-color` CSS var.
+      Fixed upstream bugs found on the way: dead `cache/logo/bagisto.png` preload
+      removed; mobile sidebar read a wrong config key (`general.design.*`); favicon
+      blade key aligned to the new config field.
+- [x] 4.3 Outgoing emails: header logo + footer "cheers" name are tenant-branded
+      (absolute logo URL; tenant context restored in queued mail by Phase 3.10).
+      Quote PDFs: tenant name + uploaded logo (non-SVG; dompdf limitation) render in
+      the header above the quote title.
 
 ## Phase 5 — Tanzania-Market Features (prioritized backlog)
 

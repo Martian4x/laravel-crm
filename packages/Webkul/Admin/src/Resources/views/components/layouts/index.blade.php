@@ -10,7 +10,7 @@
 
     {!! view_render_event('admin.layout.head.before') !!}
 
-    <title>{{ $title }}</title>
+    <title>{{ $title }}{{ tenant() ? ' — '.tenant()->name : '' }}</title>
 
     <meta charset="UTF-8">
 
@@ -52,13 +52,7 @@
         rel="stylesheet"
     />
 
-    <link
-        rel="preload"
-        as="image"
-        href="{{ url('cache/logo/bagisto.png') }}"
-    >
-
-    @if ($favicon = core()->getConfigData('general.design.admin_logo.favicon'))
+    @if ($favicon = core()->getConfigData('general.general.admin_logo.favicon'))
         <link
             type="image/x-icon"
             href="{{ Storage::url($favicon) }}"
