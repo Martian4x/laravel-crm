@@ -176,29 +176,42 @@ Work through the phases in order — each item is scoped to be done (and tested)
 
 ## Phase 5 — Tanzania-Market Features (prioritized backlog)
 
-- [ ] 5.1 **Phone-first contacts**: default country code +255, validate TZ mobile
-      formats (07XX/06XX), click-to-call links.
-- [ ] 5.2 **WhatsApp integration**: WhatsApp is the dominant business channel in TZ —
-      wa.me deep links from person/lead pages first; WhatsApp Business Cloud API
-      (send templates, log conversations as activities) as a later item.
+- [x] 5.1 **Click-to-call**: every contact number in the shared inline-phone component
+      (persons, orgs, leads, warehouses) renders as a `tel:` link.
+      **Pending refinement: TZ-format (07XX/06XX) client-side validation rule and a
+      +255 input prefix — the current `phone` vee-validate rule is generic.**
+- [x] 5.2 **WhatsApp v1**: a "WA" deep link (`wa.me`) next to each contact number;
+      local 0-prefixed numbers auto-convert to +255 international format.
+      **Later: WhatsApp Business Cloud API (template sends, conversation logging)
+      — needs a Meta business account.**
 - [ ] 5.3 **SMS notifications** via local gateways (Beem Africa, Africa's Talking):
-      lead assignment alerts, activity reminders, quote sent — SMS reaches users email doesn't.
-- [ ] 5.4 **Mobile-money fields on quotes/payments**: record payment method
-      (M-Pesa, Tigo Pesa, Airtel Money, Halopesa, bank, cash) and transaction reference
-      on won deals/quotes.
-- [ ] 5.5 **TRA compliance fields**: TIN and VRN fields on organizations and on the
-      tenant's own profile; 18% VAT line on quotes; quote PDF layout matching local
-      proforma-invoice expectations.
+      lead assignment alerts, activity reminders, quote sent.
+      **Blocked on choosing a gateway + credentials; then implement as a Laravel
+      notification channel + workflow action.**
+- [x] 5.4 **Mobile-money on quotes**: new shared attributes `payment_method`
+      (M-Pesa, Tigo Pesa, Airtel Money, Halopesa, T-Pesa, Bank Transfer, Cash) and
+      `payment_reference` (TxID) — appear automatically in quote create/edit forms
+      via the attribute system (migration `2026_07_22_000006`).
+- [x] 5.5 **TRA compliance**: `tin` + `vrn` attributes on organizations; new
+      Configuration → General → **Company Information** section (TIN, VRN, phone,
+      address — per tenant, en/sw) printed in the quote PDF header. Quotes already
+      carry a `tax_amount` field for the VAT line.
+      **Pending refinement: auto-calculate 18% VAT toggle on the quote form.**
 - [ ] 5.6 **Low-bandwidth friendliness**: audit page weight, lazy-load dashboards,
       make the app usable on 3G; test on low-end Android (most users are mobile).
-- [ ] 5.7 **Swahili-first UX defaults**: tenant chooses default language at onboarding;
-      dates in `dd/mm/yyyy`.
-- [ ] 5.8 Region/district address dropdowns for Tanzania (regions → districts → wards)
-      instead of free-text, for clean reporting.
-- [ ] 5.9 Simple subscription/plan management for tenants (per-user pricing, limits on
-      users/leads), with manual mobile-money payment recording first, gateway later.
+- [x] 5.7 **Swahili-first defaults**: tenant locale chosen at onboarding (CLI defaults
+      to `sw`, panel pre-selects Kiswahili); users inherit tenant locale.
+      **Pending: audit date display format for `dd/mm/yyyy` consistency.**
+- [x] 5.8 **Tanzania regions**: all 31 mikoa seeded into `country_states`
+      (migration `2026_07_22_000005`) — address forms now show a region dropdown when
+      country = Tanzania. **Districts/wards deferred (needs a maintained dataset;
+      regions cover reporting needs for v1).**
+- [~] 5.9 Plan management v1: `tenants.plan` + `max_users` fields exist; **user
+      creation is now blocked beyond `max_users`** with a translated message (en/sw).
+      **Pending: plan editing in the super-admin panel UI; lead/storage limits;
+      manual mobile-money subscription payment recording.**
 - [ ] 5.10 Data residency/backup note: document where data is hosted and daily backup
-      policy — a common procurement question from TZ organizations.
+      policy — a common procurement question from TZ organizations. (Phase 6 runbook.)
 
 ## Phase 6 — Hardening & Launch
 

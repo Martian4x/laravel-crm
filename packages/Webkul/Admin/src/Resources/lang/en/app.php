@@ -1236,6 +1236,7 @@ return [
                 'title'               => 'Users',
                 'update-success'      => 'User updated successfully.',
                 'user-define-error'   => 'Can not delete system user.',
+                'user-limit-reached'  => 'Your plan allows a maximum of :limit users. Contact support to upgrade.',
                 'active'              => 'Active',
                 'inactive'            => 'Inactive',
 
@@ -2134,6 +2135,15 @@ return [
                         'logo-image' => 'Logo Image',
                         'title'      => 'Admin Logo',
                         'title-info' => 'Configure the logo and favicon for your company\'s panel.',
+                    ],
+
+                    'company-info' => [
+                        'address'    => 'Address',
+                        'phone'      => 'Phone',
+                        'tin'        => 'TIN (Taxpayer Identification Number)',
+                        'title'      => 'Company Information',
+                        'title-info' => 'Company details printed on quotes and documents (TRA compliance).',
+                        'vrn'        => 'VRN (VAT Registration Number)',
                     ],
                 ],
 

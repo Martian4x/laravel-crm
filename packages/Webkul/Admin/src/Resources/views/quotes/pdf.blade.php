@@ -186,6 +186,21 @@
                     </div>
                 @endif
 
+                @php
+                    $companyInfo = array_filter([
+                        core()->getConfigData('general.general.company_info.address'),
+                        ($phone = core()->getConfigData('general.general.company_info.phone')) ? __('admin::app.configuration.index.general.general.company-info.phone').': '.$phone : null,
+                        ($tin = core()->getConfigData('general.general.company_info.tin')) ? 'TIN: '.$tin : null,
+                        ($vrn = core()->getConfigData('general.general.company_info.vrn')) ? 'VRN: '.$vrn : null,
+                    ]);
+                @endphp
+
+                @if (! empty($companyInfo))
+                    <div style="font-size: 11px; color: #444; margin-bottom: 6px;">
+                        {!! implode(' &nbsp;|&nbsp; ', array_map('e', $companyInfo)) !!}
+                    </div>
+                @endif
+
                 <b>@lang('admin::app.quotes.index.pdf.title')</b>
             </div>
 

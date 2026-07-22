@@ -30,7 +30,28 @@
                     :style="{ 'text-align': position }"
                 >
                     <span class="cursor-pointer truncate rounded">
-                        @{{ valueLabel ? valueLabel : inputValue.map(item => `${item.value}(${item.label})`).join(', ').length > 20 ? inputValue.map(item => `${item.value}(${item.label})`).join(', ').substring(0, 20) + '...' : inputValue.map(item => `${item.value}(${item.label})`).join(', ') }}
+                        <template v-if="valueLabel">
+                            @{{ valueLabel }}
+                        </template>
+
+                        <template v-else>
+                            <template v-for="(item, index) in inputValue">
+                                <a
+                                    class="hover:text-brandColor hover:underline"
+                                    :href="`tel:${item.value}`"
+                                    @click.stop
+                                >@{{ item.value }}</a>
+
+                                <a
+                                    class="text-xs font-semibold text-brandColor hover:underline"
+                                    :href="whatsAppHref(item.value)"
+                                    target="_blank"
+                                    rel="noopener"
+                                    title="WhatsApp"
+                                    @click.stop
+                                >WA</a><span v-if="index < inputValue.length - 1">,&nbsp;</span>
+                            </template>
+                        </template>
                     </span>
 
                     <div
@@ -247,8 +268,25 @@
 
             methods: {
                 /**
+                 * WhatsApp deep link: local numbers (07XX/06XX) are converted
+                 * to international format with Tanzania's country code.
+                 *
+                 * @param {String} number
+                 * @return {String}
+                 */
+                whatsAppHref(number) {
+                    let digits = String(number ?? '').replace(/\D/g, '');
+
+                    if (digits.startsWith('0')) {
+                        digits = '255' + digits.slice(1);
+                    }
+
+                    return `https://wa.me/${digits}`;
+                },
+
+                /**
                  * Toggle the input.
-                 * 
+                 *
                  * @return {void}
                  */
                 toggle() {

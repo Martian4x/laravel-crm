@@ -1234,8 +1234,9 @@ return [
                 'mass-update-failed'  => 'Users can not be updated.',
                 'mass-update-success' => 'Users updated successfully.',
                 'title'               => 'Watumiaji',
-                'update-success'      => 'User updated successfully.',
-                'user-define-error'   => 'Can not delete system user.',
+                'update-success'      => 'Mtumiaji amesasishwa kwa mafanikio.',
+                'user-define-error'   => 'Haiwezekani kufuta mtumiaji wa mfumo.',
+                'user-limit-reached'  => 'Mpango wako unaruhusu watumiaji :limit pekee. Wasiliana na msaada ili kuboresha.',
                 'active'              => 'Hai',
                 'inactive'            => 'Si Hai',
 
@@ -2134,6 +2135,15 @@ return [
                         'logo-image' => 'Picha ya Nembo',
                         'title'      => 'Nembo ya Kampuni',
                         'title-info' => 'Sanidi nembo na favikoni ya paneli ya kampuni yako.',
+                    ],
+
+                    'company-info' => [
+                        'address'    => 'Anwani',
+                        'phone'      => 'Simu',
+                        'tin'        => 'TIN (Namba ya Utambulisho wa Mlipakodi)',
+                        'title'      => 'Taarifa za Kampuni',
+                        'title-info' => 'Taarifa za kampuni zinazochapishwa kwenye nukuu za bei na nyaraka (uzingatiaji wa TRA).',
+                        'vrn'        => 'VRN (Namba ya Usajili wa VAT)',
                     ],
                 ],
 

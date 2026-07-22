@@ -63,6 +63,16 @@ class UserController extends Controller
             'view_permission'  => 'string|in:global,group,individual',
         ]);
 
+        if (
+            ($tenant = tenant())
+            && $tenant->max_users
+            && \Webkul\User\Models\User::count() >= $tenant->max_users
+        ) {
+            return response()->json([
+                'message' => trans('admin::app.settings.users.index.user-limit-reached', ['limit' => $tenant->max_users]),
+            ], 422);
+        }
+
         $data = request()->all();
 
         if (

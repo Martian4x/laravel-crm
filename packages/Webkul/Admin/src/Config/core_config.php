@@ -48,6 +48,30 @@ return [
             ],
         ],
     ], [
+        'key'    => 'general.general.company_info',
+        'name'   => 'admin::app.configuration.index.general.general.company-info.title',
+        'info'   => 'admin::app.configuration.index.general.general.company-info.title-info',
+        'sort'   => 3,
+        'fields' => [
+            [
+                'name'  => 'tin',
+                'title' => 'admin::app.configuration.index.general.general.company-info.tin',
+                'type'  => 'text',
+            ], [
+                'name'  => 'vrn',
+                'title' => 'admin::app.configuration.index.general.general.company-info.vrn',
+                'type'  => 'text',
+            ], [
+                'name'  => 'phone',
+                'title' => 'admin::app.configuration.index.general.general.company-info.phone',
+                'type'  => 'text',
+            ], [
+                'name'  => 'address',
+                'title' => 'admin::app.configuration.index.general.general.company-info.address',
+                'type'  => 'textarea',
+            ],
+        ],
+    ], [
         'key'    => 'general.settings',
         'name'   => 'admin::app.configuration.index.general.settings.title',
         'info'   => 'admin::app.configuration.index.general.settings.info',

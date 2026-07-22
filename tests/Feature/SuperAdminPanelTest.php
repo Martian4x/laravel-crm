@@ -51,6 +51,26 @@ it('lets the super admin suspend and reactivate a tenant', function () {
     expect($tenant->fresh()->isActive())->toBeTrue();
 });
 
+it('blocks user creation beyond the tenant plan limit', function () {
+    $tenant = Tenant::where('slug', 'twiga-traders')->first();
+
+    $tenant->update(['max_users' => 1]);
+
+    $tenantAdmin = User::withoutTenancy()->where('email', 'admin@twiga-traders.test')->first();
+
+    test()->actingAs($tenantAdmin)
+        ->postJson(route('admin.settings.users.store'), [
+            'name'    => 'Extra User',
+            'email'   => 'extra@twiga-traders.test',
+            'role_id' => 1,
+        ])
+        ->assertStatus(422);
+
+    expect(User::withoutTenancy()->where('email', 'extra@twiga-traders.test')->exists())->toBeFalse();
+
+    $tenant->update(['max_users' => null]);
+});
+
 it('lets the super admin impersonate a tenant admin and revert', function () {
     $tenant = Tenant::where('slug', 'twiga-traders')->first();
 
