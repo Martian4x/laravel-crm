@@ -248,19 +248,20 @@ scoped to be done one by one, in the suggested order at the end.
 
 ### A. Registration (tenant acquisition)
 
-- [ ] 7.1 **Public registration page** at `/register` ("Sajili Kampuni Yako" /
-      "Register your Company"): company name, admin name, email, password,
-      language (sw default), terms checkbox → `TenantOnboarder` creates
-      tenant + admin, logs them in, redirects to dashboard. Same visual
-      language as the login page. Must be throttled (rate limiter) + honeypot
-      field; email stays globally unique (existing decision 3.7).
+- [x] 7.1 **Public registration page** live at `/register` (en/sw): company name,
+      admin name, email, password, language (sw default), required terms checkbox →
+      `TenantOnboarder` creates tenant + admin, logs them in, redirects to dashboard
+      with a welcome flash. Throttled (5/min) + honeypot field (silent drop);
+      globally-unique email enforced. Linked from the login page.
 - [ ] 7.2 **Email verification**: registering admin must verify email before
       the tenant activates (tenant status `pending` until verified; en/sw
       verification email through the existing branded mail layout).
-- [ ] 7.3 **Terms of Service + Privacy Policy pages** (en/sw), linked from the
-      registration checkbox — required before 7.1 goes live.
-- [ ] 7.4 **New-registration notification** to the platform super admin
-      (email: tenant name, admin contact, chosen language).
+- [x] 7.3 **Terms + Privacy pages** at `/terms` and `/privacy` (en/sw), linked from
+      the registration checkbox. **Content is a sensible template — must be reviewed
+      by legal counsel before public launch (noted on the pages themselves).**
+- [x] 7.4 **New-registration notification**: queued email to all active super admins
+      (tenant, admin contact, language, link to the panel); failures logged, never
+      block registration.
 - [ ] 7.5 **Trial defaults + expiry**: self-registered tenants start on a
       `trial` plan (e.g. 14 days, `max_users` = 3); scheduler task suspends
       expired trials; suspended-login message tells them to contact sales.
@@ -271,23 +272,23 @@ scoped to be done one by one, in the suggested order at the end.
 - [ ] 7.6 **Onboarding checklist card** on the tenant dashboard until completed/
       dismissed: upload your logo → set Company Information (TIN/VRN) → invite
       your team → create your first lead. Each step links to the right page.
-- [ ] 7.7 **Super admin landing**: after login, super admins should land on
-      `/admin/super/tenants` (not the unscoped CRM dashboard, which mixes all
-      tenants' data and is misleading).
+- [x] 7.7 **Super admin landing**: after login, super admins are redirected to
+      `/admin/super/tenants` instead of the unscoped CRM dashboard.
 
 ### C. Daily-use gaps (found while walking the flows)
 
-- [ ] 7.8 **Super panel discoverability + impersonation UI**: menu/user-dropdown
-      link to the tenants panel (super admin only), and a persistent banner
-      while impersonating — "You are logged in as {tenant} — Return to super
-      admin" wired to the existing `super.tenants.revert` route (today the
-      revert route exists but nothing in the UI triggers it).
+- [x] 7.8 **Super panel discoverability + impersonation UI**: "Tenants" link in the
+      user dropdown (super admins only) and an amber banner on every page while
+      impersonating — "You are logged in as {tenant} — Return to super admin"
+      wired to `super.tenants.revert` (en/sw).
 - [ ] 7.9 **Plan editing in the super panel**: edit plan name / `max_users` /
       trial end per tenant; show why a tenant is suspended.
-- [ ] 7.10 **Per-tenant outgoing mail identity**: from-name should be the tenant
-      name and reply-to the sending user (MAIL_FROM_* is one global env today).
-      Also fix leftover `MAIL_FROM_ADDRESS=laravel@krayincrm.com` in
-      `.env.example` (missed in the Phase 1 rebrand).
+- [x] 7.10 **Per-tenant outgoing mail identity**: `MessageSending` listener keeps the
+      platform from-address (SPF-safe) but sets the display name to the tenant's
+      name whenever tenant context is active (covers queued mail via 3.10).
+      Leftover `laravel@krayincrm.com` in `.env.example` fixed →
+      `noreply@azimio.co.tz`. **Reply-to-the-sending-user deferred (sender not
+      available in queued context; needs plumbing through mailables).**
 - [ ] 7.11 **Human click-through regression** of create/edit flows per module
       as a tenant admin (carried over from 6.1 — automated smoke covers page
       rendering, not every mutation path).

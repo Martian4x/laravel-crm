@@ -8,6 +8,7 @@ use Azimio\Tenancy\Http\Middleware\IdentifyTenant;
 use Azimio\Tenancy\Listeners\ScopeDataGridToTenant;
 use Azimio\Tenancy\Models\Tenant;
 use Azimio\Tenancy\TenantManager;
+use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
@@ -54,6 +55,27 @@ class TenancyServiceProvider extends ServiceProvider
 
         $this->propagateTenantToQueue();
 
+        /**
+         * Outgoing mail sends from the platform address (SPF-safe) but with
+         * the tenant's name as the display name, so recipients see the
+         * company they deal with, not the platform.
+         */
+        Event::listen(MessageSending::class, function (MessageSending $event) {
+            $tenant = tenant();
+
+            if (! $tenant) {
+                return;
+            }
+
+            $from = $event->message->getFrom();
+
+            if (! empty($from)) {
+                $event->message->from(
+                    new \Symfony\Component\Mime\Address($from[0]->getAddress(), $tenant->name)
+                );
+            }
+        });
+
         if ($this->app->runningInConsole()) {
             $this->commands([
                 \Azimio\Tenancy\Console\Commands\CreateTenant::class,
@@ -83,6 +105,20 @@ class TenancyServiceProvider extends ServiceProvider
         Route::middleware(['web', 'user'])
             ->prefix(config('app.admin_path').'/super')
             ->post('revert', [TenantController::class, 'revert'])->name('super.tenants.revert');
+
+        // Public: tenant self-registration + legal pages.
+        Route::middleware(['web'])->group(function () {
+            Route::get('register', [\Azimio\Tenancy\Http\Controllers\RegisterController::class, 'create'])
+                ->name('azimio.register.create');
+
+            Route::post('register', [\Azimio\Tenancy\Http\Controllers\RegisterController::class, 'store'])
+                ->middleware('throttle:5,1')
+                ->name('azimio.register.store');
+
+            Route::view('terms', 'azimio::legal.terms')->name('azimio.terms');
+
+            Route::view('privacy', 'azimio::legal.privacy')->name('azimio.privacy');
+        });
     }
 
     /**

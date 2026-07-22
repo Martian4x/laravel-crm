@@ -99,6 +99,14 @@
                 </x-admin::form>
 
                 {!! view_render_event('admin.sessions.login.form_controls.after') !!}
+
+                <!-- Tenant self-registration -->
+                <a
+                    class="pb-4 text-center text-sm text-brandColor hover:underline"
+                    href="{{ route('azimio.register.create') }}"
+                >
+                    @lang('azimio::app.register.title')
+                </a>
             </div>
         </div>
 

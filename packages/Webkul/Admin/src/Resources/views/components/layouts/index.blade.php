@@ -88,6 +88,23 @@
 <body class="h-full font-inter dark:bg-gray-950">
     {!! view_render_event('admin.layout.body.before') !!}
 
+    <!-- Impersonation banner -->
+    @if (session()->has('azimio_impersonator_id'))
+        <div class="flex items-center justify-center gap-3 bg-amber-400 px-4 py-1.5 text-sm font-medium text-gray-900">
+            <span>
+                @lang('azimio::app.impersonation.banner', ['tenant' => tenant()?->name ?? ''])
+            </span>
+
+            <form method="POST" action="{{ route('super.tenants.revert') }}">
+                @csrf
+
+                <button type="submit" class="font-semibold underline">
+                    @lang('azimio::app.impersonation.revert')
+                </button>
+            </form>
+        </div>
+    @endif
+
     <div
         id="app"
         class="h-full"

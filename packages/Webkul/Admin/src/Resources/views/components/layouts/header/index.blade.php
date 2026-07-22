@@ -92,6 +92,15 @@
                 </div>
 
                 <div class="grid gap-1 pb-2.5">
+                    @if (auth()->guard('user')->user()->is_super_admin)
+                        <a
+                            class="cursor-pointer px-5 py-2 text-base text-gray-800 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-950"
+                            href="{{ route('super.tenants.index') }}"
+                        >
+                            @lang('azimio::app.tenants.title')
+                        </a>
+                    @endif
+
                     <a
                         class="cursor-pointer px-5 py-2 text-base text-gray-800 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-950"
                         href="{{ route('admin.user.account.edit') }}"

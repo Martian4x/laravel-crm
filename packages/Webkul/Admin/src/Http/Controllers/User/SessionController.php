@@ -54,6 +54,14 @@ class SessionController extends Controller
             return redirect()->route('admin.session.create');
         }
 
+        /**
+         * Super admins land on the tenants panel: the CRM dashboard is
+         * unscoped for them and would mix every tenant's data.
+         */
+        if (auth()->guard('user')->user()->is_super_admin) {
+            return redirect()->route('super.tenants.index');
+        }
+
         $menus = menu()->getItems('admin');
 
         $availableNextMenu = $menus?->first();
