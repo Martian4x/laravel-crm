@@ -93,7 +93,7 @@
                     </x-admin::form.control-group>
 
                     <!-- Email -->
-                    <x-admin::form.control-group class="!mb-0">
+                    <x-admin::form.control-group>
                         <x-admin::form.control-group.label class="required">
                             @lang('admin::app.account.edit.email')
                         </x-admin::form.control-group.label>
@@ -108,6 +108,31 @@
                         />
 
                         <x-admin::form.control-group.error control-name="email" />
+                    </x-admin::form.control-group>
+
+                    <!-- Language -->
+                    <x-admin::form.control-group class="!mb-0">
+                        <x-admin::form.control-group.label>
+                            @lang('admin::app.account.edit.locale')
+                        </x-admin::form.control-group.label>
+
+                        <x-admin::form.control-group.control
+                            type="select"
+                            name="locale"
+                            id="locale"
+                            :value="old('locale') ?? $user->locale"
+                            :label="trans('admin::app.account.edit.locale')"
+                        >
+                            <option value="">
+                                @lang('admin::app.account.edit.locale-default')
+                            </option>
+
+                            @foreach (config('app.available_locales') as $localeCode => $localeTitle)
+                                <option value="{{ $localeCode }}">{{ $localeTitle }}</option>
+                            @endforeach
+                        </x-admin::form.control-group.control>
+
+                        <x-admin::form.control-group.error control-name="locale" />
                     </x-admin::form.control-group>
                 </div>
             </div>

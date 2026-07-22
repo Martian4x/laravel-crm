@@ -55,21 +55,29 @@ Work through the phases in order — each item is scoped to be done (and tested)
 
 ## Phase 2 — Localization: TZS + Swahili/English only
 
-- [ ] 2.1 Set `APP_CURRENCY=TZS` default (`config/app.php:180`); verify
-      `Core.php::currencySymbol()` / `formatBasePrice()` render as **"TSh 1,500,000"**
-      (TZS conventionally shows no decimal places — adjust the NumberFormatter if needed).
-- [ ] 2.2 Set default timezone `Africa/Dar_es_Salaam` and date format conventions in config.
-- [ ] 2.3 Create Swahili (`sw`) translations: copy `en` folders and translate —
-      `packages/Webkul/Admin/src/Resources/lang/sw/app.php` (the big one),
-      plus Installer, and any other package with a `lang` dir.
-- [ ] 2.4 Register `sw` in the locale list (`Webkul\Core\Core@locales` — see how
-      existing locales are stored/seeded; likely `locales` table via Installer seeder).
-- [ ] 2.5 Remove/disable non-target locales (ar, es, fa, pt_BR, tr, vi) from the locale
-      options so only English & Swahili are selectable. Prefer disabling in the
-      seeder/options over deleting lang folders (keeps upstream merges clean).
-- [ ] 2.6 Per-user language preference: verify existing user locale setting works and
-      persists; default new users to `sw` or `en` per tenant setting (Phase 3).
-- [ ] 2.7 Swahili email templates (welcome, forgot password, lead/quote notifications).
+- [x] 2.1 `APP_CURRENCY=TZS` default (config + .env + .env.example). `Core.php`
+      renders **"TSh 1,500,000"** (custom-cased TZS: `TSh` symbol, 0 decimals).
+      Installer (web + console) currency choices trimmed to TZS (default) + USD.
+- [x] 2.2 Default timezone `Africa/Dar_es_Salaam` (config + .env + .env.example).
+- [x] 2.3 Swahili (`sw`) lang files created for all 5 lang-bearing packages:
+      Core, WebForm, DataTransfer, Installer (fully translated) and Admin
+      (~640 high-traffic values translated — menus, auth, buttons, fields, common
+      messages; longer prose still English as graceful fallback).
+      **Ongoing: refine Admin sw translations section by section — a native
+      Swahili speaker should review; file is
+      `packages/Webkul/Admin/src/Resources/lang/sw/app.php`.**
+- [x] 2.4 `sw` registered in `config/app.php` `available_locales`
+      (drives `Core@locales`, installer locale pickers, validation).
+- [x] 2.5 `available_locales` now en + Kiswahili only; old lang folders kept on disk
+      (unselectable) to keep upstream merges clean.
+- [x] 2.6 Per-user language: new nullable `users.locale` column (Azimio migration),
+      exposed on My Account page (select with "Use system default"), validated
+      against available locales; `Admin\Locale` middleware now prefers the user's
+      locale over the global config. Dev seeder sets tenant admins' locale from
+      their tenant.
+- [x] 2.7 Email templates seed via `trans('installer::app.seeders.email...')`, which
+      now has Swahili — reseeding with `locale=sw` (and per-tenant seeding in
+      Phase 3.6) produces Swahili templates automatically.
 
 ## Phase 3 — Multi-Tenancy Core
 

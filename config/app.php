@@ -108,7 +108,7 @@ return [
     |
      */
 
-    'timezone' => env('APP_TIMEZONE', 'Asia/Kolkata'),
+    'timezone' => env('APP_TIMEZONE', 'Africa/Dar_es_Salaam'),
 
     /*
     |--------------------------------------------------------------------------
@@ -134,13 +134,8 @@ return [
      */
 
     'available_locales' => [
-        'ar'    => 'Arabic',
-        'en'    => 'English',
-        'es'    => 'Español',
-        'fa'    => 'Persian',
-        'pt_BR' => 'Portuguese',
-        'tr'    => 'Türkçe',
-        'vi'    => 'Vietnamese',
+        'en' => 'English',
+        'sw' => 'Kiswahili',
     ],
 
     /*
@@ -178,7 +173,7 @@ return [
     |
      */
 
-    'currency' => env('APP_CURRENCY', 'USD'),
+    'currency' => env('APP_CURRENCY', 'TZS'),
 
     /*
     |--------------------------------------------------------------------------

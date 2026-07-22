@@ -38,12 +38,8 @@ class Installer extends Command
      * @var array
      */
     protected $locales = [
-        'ar'    => 'Arabic',
-        'en'    => 'English',
-        'tr'    => 'Turkish',
-        'es'    => 'Spanish',
-        'fa'    => 'Persian',
-        'pt_BR' => 'Portuguese',
+        'en' => 'English',
+        'sw' => 'Kiswahili',
     ];
 
     /**
@@ -52,70 +48,8 @@ class Installer extends Command
      * @var array
      */
     protected $currencies = [
-        'AED' => 'United Arab Emirates Dirham',
-        'ARS' => 'Argentine Peso',
-        'AUD' => 'Australian Dollar',
-        'BDT' => 'Bangladeshi Taka',
-        'BRL' => 'Brazilian Real',
-        'CAD' => 'Canadian Dollar',
-        'CHF' => 'Swiss Franc',
-        'CLP' => 'Chilean Peso',
-        'CNY' => 'Chinese Yuan',
-        'COP' => 'Colombian Peso',
-        'CZK' => 'Czech Koruna',
-        'DKK' => 'Danish Krone',
-        'DZD' => 'Algerian Dinar',
-        'EGP' => 'Egyptian Pound',
-        'EUR' => 'Euro',
-        'FJD' => 'Fijian Dollar',
-        'GBP' => 'British Pound Sterling',
-        'HKD' => 'Hong Kong Dollar',
-        'HUF' => 'Hungarian Forint',
-        'IDR' => 'Indonesian Rupiah',
-        'ILS' => 'Israeli New Shekel',
-        'INR' => 'Indian Rupee',
-        'JOD' => 'Jordanian Dinar',
-        'JPY' => 'Japanese Yen',
-        'KRW' => 'South Korean Won',
-        'KWD' => 'Kuwaiti Dinar',
-        'KZT' => 'Kazakhstani Tenge',
-        'LBP' => 'Lebanese Pound',
-        'LKR' => 'Sri Lankan Rupee',
-        'LYD' => 'Libyan Dinar',
-        'MAD' => 'Moroccan Dirham',
-        'MUR' => 'Mauritian Rupee',
-        'MXN' => 'Mexican Peso',
-        'MYR' => 'Malaysian Ringgit',
-        'NGN' => 'Nigerian Naira',
-        'NOK' => 'Norwegian Krone',
-        'NPR' => 'Nepalese Rupee',
-        'NZD' => 'New Zealand Dollar',
-        'OMR' => 'Omani Rial',
-        'PAB' => 'Panamanian Balboa',
-        'PEN' => 'Peruvian Nuevo Sol',
-        'PHP' => 'Philippine Peso',
-        'PKR' => 'Pakistani Rupee',
-        'PLN' => 'Polish Zloty',
-        'PYG' => 'Paraguayan Guarani',
-        'QAR' => 'Qatari Rial',
-        'RON' => 'Romanian Leu',
-        'RUB' => 'Russian Ruble',
-        'SAR' => 'Saudi Riyal',
-        'SEK' => 'Swedish Krona',
-        'SGD' => 'Singapore Dollar',
-        'THB' => 'Thai Baht',
-        'TND' => 'Tunisian Dinar',
-        'TRY' => 'Turkish Lira',
-        'TWD' => 'New Taiwan Dollar',
-        'UAH' => 'Ukrainian Hryvnia',
+        'TZS' => 'Tanzanian Shilling',
         'USD' => 'United States Dollar',
-        'UZS' => 'Uzbekistani Som',
-        'VEF' => 'Venezuelan Bolívar',
-        'VND' => 'Vietnamese Dong',
-        'XAF' => 'CFA Franc BEAC',
-        'XOF' => 'CFA Franc BCEAO',
-        'ZAR' => 'South African Rand',
-        'ZMW' => 'Zambian Kwacha',
     ];
 
     /**
@@ -138,7 +72,7 @@ class Installer extends Command
         $this->warn('Step: Seeding basic data for AzimioCustomers kickstart...');
         $this->info(app(AzimioCustomersDatabaseSeeder::class)->run([
             'locale'   => $applicationDetails['locale'] ?? 'en',
-            'currency' => $applicationDetails['currency'] ?? 'USD',
+            'currency' => $applicationDetails['currency'] ?? 'TZS',
         ]));
 
         $this->warn('Step: Publishing assets and configurations...');

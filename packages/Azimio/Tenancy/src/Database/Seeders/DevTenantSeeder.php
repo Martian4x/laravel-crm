@@ -51,6 +51,7 @@ class DevTenantSeeder extends Seeder
                 [
                     'name'            => $tenant['name'].' Admin',
                     'password'        => bcrypt('password'),
+                    'locale'          => $tenant['locale'],
                     'status'          => 1,
                     'is_super_admin'  => 0,
                     'tenant_id'       => $tenantId,

@@ -30,6 +30,14 @@ class Locale
      */
     public function handle($request, Closure $next)
     {
+        $userLocale = auth()->guard('user')->user()?->locale;
+
+        if ($userLocale && array_key_exists($userLocale, config('app.available_locales'))) {
+            app()->setLocale($userLocale);
+
+            return $next($request);
+        }
+
         app()->setLocale(
             core()->getConfigData('general.general.locale_settings.locale')
                 ?: app()->getLocale()

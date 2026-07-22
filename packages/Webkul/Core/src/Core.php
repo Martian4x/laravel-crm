@@ -203,6 +203,10 @@ class Core
      */
     public function currencySymbol($code)
     {
+        if ($code === 'TZS') {
+            return 'TSh';
+        }
+
         $formatter = new \NumberFormatter(app()->getLocale().'@currency='.$code, \NumberFormatter::CURRENCY);
 
         return $formatter->getSymbol(\NumberFormatter::CURRENCY_SYMBOL);
@@ -221,9 +225,18 @@ class Core
             $price = 0;
         }
 
+        $currency = config('app.currency');
+
         $formatter = new \NumberFormatter(app()->getLocale(), \NumberFormatter::CURRENCY);
 
-        return $formatter->formatCurrency($price, config('app.currency'));
+        if ($currency === 'TZS') {
+            // TZS is conventionally written as "TSh 1,500,000" with no decimals.
+            $formatter->setAttribute(\NumberFormatter::FRACTION_DIGITS, 0);
+
+            return str_replace('TZS', 'TSh', $formatter->formatCurrency($price, $currency));
+        }
+
+        return $formatter->formatCurrency($price, $currency);
     }
 
     /**

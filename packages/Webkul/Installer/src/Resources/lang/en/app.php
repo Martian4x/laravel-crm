@@ -203,6 +203,7 @@ return [
                 'sri-lankan-rupee'            => 'Sri Lankan Rupee (LKR)',
                 'swedish-krona'               => 'Swedish Krona (SEK)',
                 'swiss-franc'                 => 'Swiss Franc (CHF)',
+                'tanzanian-shilling'          => 'Tanzanian Shilling (TZS)',
                 'thai-baht'                   => 'Thai Baht (THB)',
                 'title'                       => 'Store Configuration',
                 'tunisian-dinar'              => 'Tunisian Dinar (TND)',

@@ -92,6 +92,8 @@ return [
             'email'             => 'Email',
             'general'           => 'General',
             'invalid-password'  => 'The current password you entered is incorrect.',
+            'locale'            => 'Language',
+            'locale-default'    => 'Use system default',
             'name'              => 'Name',
             'password'          => 'Password',
             'profile-image'     => 'Profile Image',

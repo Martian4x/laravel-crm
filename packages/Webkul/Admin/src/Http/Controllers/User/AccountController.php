@@ -38,6 +38,7 @@ class AccountController extends Controller
             'password'         => 'nullable|min:6|confirmed',
             'current_password' => 'required|min:6',
             'image.*'          => 'nullable|mimes:bmp,jpeg,jpg,png,webp',
+            'locale'           => 'nullable|in:'.implode(',', array_keys(config('app.available_locales'))),
         ]);
 
         $data = request()->only([
@@ -47,6 +48,7 @@ class AccountController extends Controller
             'password_confirmation',
             'current_password',
             'image',
+            'locale',
         ]);
 
         if (! Hash::check($data['current_password'], $user->password)) {
