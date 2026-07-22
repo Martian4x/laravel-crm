@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\ServiceProvider;
 use Konekt\Concord\ConcordServiceProvider;
 use Prettus\Repository\Providers\RepositoryServiceProvider;
+use Azimio\Tenancy\Providers\TenancyServiceProvider;
 use Webkul\Activity\Providers\ActivityServiceProvider;
 use Webkul\Admin\Providers\AdminServiceProvider;
 use Webkul\Attribute\Providers\AttributeServiceProvider;
@@ -244,6 +245,11 @@ return [
         UserServiceProvider::class,
         WarehouseServiceProvider::class,
         WebFormServiceProvider::class,
+
+        /*
+         * Azimio Service Providers...
+         */
+        TenancyServiceProvider::class,
     ])->toArray(),
 
     /*
