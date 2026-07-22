@@ -51,4 +51,8 @@ Route::controller(AccountController::class)->prefix('account')->group(function (
     Route::get('', 'edit')->name('admin.user.account.edit');
 
     Route::put('update', 'update')->name('admin.user.account.update');
+
+    Route::get('password', 'editPassword')->name('admin.user.account.password.edit');
+
+    Route::put('password', 'updatePassword')->name('admin.user.account.password.update');
 });

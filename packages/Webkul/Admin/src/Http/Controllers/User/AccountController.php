@@ -24,7 +24,10 @@ class AccountController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the account details (name, email, image, language).
+     *
+     * Password is handled separately on its own page so that updating a
+     * profile detail no longer forces the user to re-enter their password.
      *
      * @return Response
      */
@@ -33,44 +36,23 @@ class AccountController extends Controller
         $user = auth()->guard('user')->user();
 
         $this->validate(request(), [
-            'name'             => 'required',
-            'email'            => 'email|unique:users,email,'.$user->id,
-            'password'         => 'nullable|min:6|confirmed',
-            'current_password' => 'required|min:6',
-            'image.*'          => 'nullable|mimes:bmp,jpeg,jpg,png,webp',
-            'locale'           => 'nullable|in:'.implode(',', array_keys(config('app.available_locales'))),
+            'name'    => 'required',
+            'email'   => 'email|unique:users,email,'.$user->id,
+            'image.*' => 'nullable|mimes:bmp,jpeg,jpg,png,webp',
+            'locale'  => 'nullable|in:'.implode(',', array_keys(config('app.available_locales'))),
         ]);
 
         $data = request()->only([
             'name',
             'email',
-            'password',
-            'password_confirmation',
-            'current_password',
             'image',
             'locale',
         ]);
-
-        if (! Hash::check($data['current_password'], $user->password)) {
-            session()->flash('warning', trans('admin::app.account.edit.invalid-password'));
-
-            return redirect()->back();
-        }
 
         if (isset($data['role_id']) || isset($data['view_permission'])) {
             session()->flash('warning', trans('admin::app.user.account.permission-denied'));
 
             return redirect()->back();
-        }
-
-        $isPasswordChanged = false;
-
-        if (! $data['password']) {
-            unset($data['password']);
-        } else {
-            $isPasswordChanged = true;
-
-            $data['password'] = bcrypt($data['password']);
         }
 
         if (request()->hasFile('image')) {
@@ -89,12 +71,49 @@ class AccountController extends Controller
 
         $user->update($data);
 
-        if ($isPasswordChanged) {
-            Event::dispatch('user.account.update-password', $user);
-        }
-
         session()->flash('success', trans('admin::app.account.edit.update-success'));
 
         return back();
+    }
+
+    /**
+     * Show the change-password page.
+     *
+     * @return View
+     */
+    public function editPassword()
+    {
+        $user = auth()->guard('user')->user();
+
+        return view('admin::user.account.password', compact('user'));
+    }
+
+    /**
+     * Update the account password.
+     *
+     * @return Response
+     */
+    public function updatePassword()
+    {
+        $user = auth()->guard('user')->user();
+
+        $this->validate(request(), [
+            'current_password' => 'required|min:6',
+            'password'         => 'required|min:6|confirmed',
+        ]);
+
+        if (! Hash::check(request('current_password'), $user->password)) {
+            session()->flash('warning', trans('admin::app.account.edit.invalid-password'));
+
+            return redirect()->back();
+        }
+
+        $user->update(['password' => bcrypt(request('password'))]);
+
+        Event::dispatch('user.account.update-password', $user);
+
+        session()->flash('success', trans('admin::app.account.edit.password-update-success'));
+
+        return redirect()->route('admin.user.account.password.edit');
     }
 }

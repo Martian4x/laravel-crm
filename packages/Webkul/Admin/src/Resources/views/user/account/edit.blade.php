@@ -34,7 +34,15 @@
             </div>
 
             <div class="flex items-center gap-x-2.5">
-                <!-- Create button for Roles -->
+                <!-- Change password link -->
+                <a
+                    href="{{ route('admin.user.account.password.edit') }}"
+                    class="secondary-button"
+                >
+                    @lang('admin::app.account.edit.change-password')
+                </a>
+
+                <!-- Save button -->
                 <div class="flex items-center gap-x-2.5">
                     {!! view_render_event('admin.user.account.save_btn.before', ['user' => $user]) !!}
 
@@ -138,87 +146,6 @@
             </div>
 
             {!! view_render_event('admin.user.account.left.after', ['user' => $user]) !!}
-
-            {!! view_render_event('admin.user.account.right.before', ['user' => $user]) !!}
-
-            <!-- Right sub-component -->
-            <div class="flex w-[360px] max-w-full flex-col gap-2 max-md:w-full">
-                <x-admin::accordion>
-                    <x-slot:header>
-                        <p class="p-2.5 text-base font-semibold text-gray-800 dark:text-white">
-                            @lang('admin::app.account.edit.change-password')
-                        </p>
-                    </x-slot>
-
-                     <!-- Change Account Password -->
-                    <x-slot:content>
-                        {!! view_render_event('admin.user.current_password.before', ['user' => $user]) !!}
-
-                        <!-- Current Password -->
-                        <x-admin::form.control-group>
-                            <x-admin::form.control-group.label class="required">
-                                @lang('admin::app.account.edit.current-password')
-                            </x-admin::form.control-group.label>
-
-                            <x-admin::form.control-group.control
-                                type="password"
-                                name="current_password"
-                                rules="required|min:6"
-                                :label="trans('admin::app.account.edit.current-password')"
-                                :placeholder="trans('admin::app.account.edit.current-password')"
-                            />
-
-                            <x-admin::form.control-group.error control-name="current_password" />
-                        </x-admin::form.control-group>
-
-                        {!! view_render_event('admin.user.current_password.after', ['user' => $user]) !!}
-
-                        {!! view_render_event('admin.user.password.before', ['user' => $user]) !!}
-
-                        <!-- Password -->
-                        <x-admin::form.control-group>
-                            <x-admin::form.control-group.label>
-                                @lang('admin::app.account.edit.password')
-                            </x-admin::form.control-group.label>
-
-                            <x-admin::form.control-group.control
-                                type="password"
-                                name="password"
-                                rules="min:6"
-                                :placeholder="trans('admin::app.account.edit.password')"
-                                ref="password"
-                            />
-
-                            <x-admin::form.control-group.error control-name="password" />
-                        </x-admin::form.control-group>
-
-                        {!! view_render_event('admin.user.password.after', ['user' => $user]) !!}
-
-                        {!! view_render_event('admin.user.confirm-password.before', ['user' => $user]) !!}
-
-                        <!-- Confirm Password -->
-                        <x-admin::form.control-group class="!mb-0">
-                            <x-admin::form.control-group.label>
-                                @lang('admin::app.account.edit.confirm-password')
-                            </x-admin::form.control-group.label>
-
-                            <x-admin::form.control-group.control
-                                type="password"
-                                name="password_confirmation"
-                                rules="confirmed:@password"
-                                :label="trans('admin::app.account.edit.confirm-password')"
-                                :placeholder="trans('admin::app.account.edit.confirm-password')"
-                            />
-
-                            <x-admin::form.control-group.error control-name="password_confirmation" />
-                        </x-admin::form.control-group>
-
-                        {!! view_render_event('admin.user.confirm-password.after', ['user' => $user]) !!}
-                    </x-slot>
-                </x-admin::accordion>
-            </div>
-
-            {!! view_render_event('admin.user.account.right.after', ['user' => $user]) !!}
         </div>
     </x-admin::form>
 
