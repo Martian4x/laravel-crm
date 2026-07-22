@@ -239,6 +239,76 @@ Work through the phases in order — each item is scoped to be done (and tested)
 
 ---
 
+## Phase 7 — Tenant Self-Service Workflow (registration → dashboard → lifecycle)
+
+Audit of the full tenant journey (2026-07-22). Today a tenant exists only if the
+super admin creates it; there is **no public registration**, no first-login
+onboarding, no trial/billing lifecycle, and no offboarding. Items below are
+scoped to be done one by one, in the suggested order at the end.
+
+### A. Registration (tenant acquisition)
+
+- [ ] 7.1 **Public registration page** at `/register` ("Sajili Kampuni Yako" /
+      "Register your Company"): company name, admin name, email, password,
+      language (sw default), terms checkbox → `TenantOnboarder` creates
+      tenant + admin, logs them in, redirects to dashboard. Same visual
+      language as the login page. Must be throttled (rate limiter) + honeypot
+      field; email stays globally unique (existing decision 3.7).
+- [ ] 7.2 **Email verification**: registering admin must verify email before
+      the tenant activates (tenant status `pending` until verified; en/sw
+      verification email through the existing branded mail layout).
+- [ ] 7.3 **Terms of Service + Privacy Policy pages** (en/sw), linked from the
+      registration checkbox — required before 7.1 goes live.
+- [ ] 7.4 **New-registration notification** to the platform super admin
+      (email: tenant name, admin contact, chosen language).
+- [ ] 7.5 **Trial defaults + expiry**: self-registered tenants start on a
+      `trial` plan (e.g. 14 days, `max_users` = 3); scheduler task suspends
+      expired trials; suspended-login message tells them to contact sales.
+      Needs `trial_ends_at` column on tenants.
+
+### B. First login & onboarding
+
+- [ ] 7.6 **Onboarding checklist card** on the tenant dashboard until completed/
+      dismissed: upload your logo → set Company Information (TIN/VRN) → invite
+      your team → create your first lead. Each step links to the right page.
+- [ ] 7.7 **Super admin landing**: after login, super admins should land on
+      `/admin/super/tenants` (not the unscoped CRM dashboard, which mixes all
+      tenants' data and is misleading).
+
+### C. Daily-use gaps (found while walking the flows)
+
+- [ ] 7.8 **Super panel discoverability + impersonation UI**: menu/user-dropdown
+      link to the tenants panel (super admin only), and a persistent banner
+      while impersonating — "You are logged in as {tenant} — Return to super
+      admin" wired to the existing `super.tenants.revert` route (today the
+      revert route exists but nothing in the UI triggers it).
+- [ ] 7.9 **Plan editing in the super panel**: edit plan name / `max_users` /
+      trial end per tenant; show why a tenant is suspended.
+- [ ] 7.10 **Per-tenant outgoing mail identity**: from-name should be the tenant
+      name and reply-to the sending user (MAIL_FROM_* is one global env today).
+      Also fix leftover `MAIL_FROM_ADDRESS=laravel@krayincrm.com` in
+      `.env.example` (missed in the Phase 1 rebrand).
+- [ ] 7.11 **Human click-through regression** of create/edit flows per module
+      as a tenant admin (carried over from 6.1 — automated smoke covers page
+      rendering, not every mutation path).
+
+### D. Lifecycle & offboarding
+
+- [ ] 7.12 **Tenant data export**: per-tenant Excel/CSV export (leads, persons,
+      organizations, quotes, activities) — needed for offboarding requests and
+      the DEPLOYMENT.md data-residency promise.
+- [ ] 7.13 **Tenant deletion with grace period**: suspend → export → delete
+      (FK cascades already wipe child rows); confirmation flow in the super
+      panel and file-storage cleanup for the tenant's uploads.
+
+**Suggested order:** 7.8 (small, unblocks admin daily work) → 7.7 → 7.10 →
+7.3 → 7.1 → 7.2 → 7.4 → 7.5 → 7.6 → 7.9 → 7.11 → 7.12 → 7.13.
+Rationale: fix the sharp edges super admins hit today first, then the
+registration funnel in dependency order (terms before the page, verification
+before opening it up), then lifecycle.
+
+---
+
 ### Suggested execution order
 1 (rebrand — quick win, visible) → 2 (locale/currency) → 3 (tenancy — the big one,
 do 3.1–3.4 first, then module-by-module scoping) → 4 → 6.1–6.4 → launch → 5 as
