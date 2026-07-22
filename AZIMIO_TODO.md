@@ -100,9 +100,13 @@ Work through the phases in order — each item is scoped to be done (and tested)
       unscoped. Admin route middleware reordered to
       `['web', 'user', 'tenant', 'admin_locale']` so tenant context exists before
       config reads.
-- [ ] 3.5 Super-admin panel (new package, e.g. `packages/Azimio/SuperAdmin`):
-      CRUD tenants, suspend/activate, impersonate ("login as tenant admin"),
-      usage stats (users, leads, storage per tenant).
+- [x] 3.5 Super-admin panel at `/admin/super/tenants` (part of `Azimio\Tenancy`,
+      gated by `EnsureSuperAdmin` middleware — 404 for tenant users): list tenants
+      with usage counts (users/leads/persons), create tenant (form → TenantOnboarder),
+      suspend/activate toggle, impersonate ("login as" first tenant admin, with
+      session-based revert via POST `/admin/super/revert`). en + sw translations.
+      **Later polish: link the panel from the admin menu for super admins; richer
+      per-tenant stats (storage, activity).**
 - [x] 3.6 Tenant onboarding: `TenantOnboarder` service (tenant + admin user in one
       transaction, admin gets the shared platform Administrator role and the tenant's
       locale) + `php artisan azimio:tenant:create "Name" email@x.tz --locale=sw`
@@ -113,10 +117,18 @@ Work through the phases in order — each item is scoped to be done (and tested)
 - [x] 3.8 `core_config` is tenant-scoped (strict): tenant settings reads/writes hit
       their own rows; missing rows fall back to file config defaults. Global rows
       (NULL) remain for the platform/login screen.
-- [ ] 3.9 Tenant-scope file storage: uploads under `storage/app/tenants/{id}/...`;
-      scope IMAP/mail settings (`webklex/laravel-imap` inboxes are per-tenant).
-- [ ] 3.10 Tenant-scope queued jobs, workflows/automation, and scheduled tasks —
-      every job must carry and restore tenant context.
+- [x] 3.9 File storage audited: all upload paths are entity-id-scoped
+      (`activities/{id}`, `{entity_type}/{entity_id}`) with globally unique ids and
+      access always via tenant-scoped DB rows — no cross-tenant leak. Per-tenant
+      directory prefix deferred as an ops enhancement (quotas, wipe-on-delete).
+      IMAP: credentials live in tenant-scoped `core_config`;
+      `inbound-emails:process` now iterates active tenants and fetches each inbox
+      inside `runAs()` so fetched emails are stamped per tenant.
+- [x] 3.10 Queue-wide tenant propagation in `TenancyServiceProvider`:
+      `Queue::createPayloadUsing` stamps every job with the dispatching tenant;
+      `JobProcessing` restores the context, `JobProcessed`/`JobFailed` clear it.
+      Covers queued mail, imports, and notifications without touching job classes.
+      Workflows/webhooks run synchronously in request context (already scoped).
 - [x] 3.11 DataGrids **audited: every grid uses raw `DB::table()`** (bypasses Eloquent
       scopes). Fixed centrally with zero upstream edits: wildcard listener
       `ScopeDataGridToTenant` on `datagrid.*.query_builder.set.after` constrains each
@@ -125,13 +137,21 @@ Work through the phases in order — each item is scoped to be done (and tested)
       **Pending sub-item: audit remaining raw `DB::` usage outside DataGrids
       (reporting helpers in `Admin/Helpers/Reporting`, global search) — same
       root-table filter approach applies.**
-- [ ] 3.12 Web forms (`WebForm` package) are publicly embedded — form URLs/keys must
-      encode the tenant so submissions land in the right tenant.
-- [ ] 3.13 REST API / Sanctum tokens: tokens resolve tenant from user; test cross-tenant
-      access is impossible via API.
-- [ ] 3.14 **Isolation test suite** (most important tests in the project): for each
-      module, tenant A must never read/update/delete tenant B data — via UI routes,
-      API, global search, exports (maatwebsite/excel), PDFs, and lookups/dropdowns.
+- [x] 3.12 Web forms: the public `formStore` endpoint now resolves the form first and
+      establishes tenant context from `web_forms.tenant_id` (404 if the tenant is
+      suspended) — the person-dedupe lookup, lead/person creation, and
+      pipeline/source/type defaults all run tenant-scoped.
+- [x] 3.13 Audited: no live token API exists — `routes/api.php` is the Laravel stub
+      and all admin REST endpoints sit inside the web group, which carries the
+      `tenant` middleware. **If a Sanctum API is added later, its route group must
+      include `tenant` (resolve from the token's user).**
+- [x] 3.14 Isolation suite v1 (12 tests, 34 assertions): model scoping (read/update/
+      delete/stamping), shared platform defaults, DataGrid raw-builder scoping,
+      unscoped console, super-admin panel access control, suspended-tenant logout,
+      impersonate/revert. Also fixed the raw email-union queries in
+      Lead/Person ActivityControllers (were probe-able cross-tenant).
+      **Ongoing: extend per-module coverage (exports, PDFs, mega-search, mail
+      compose lookups) during Phase 6 regression.**
 
 ## Phase 4 — Per-Tenant Custom Branding
 
