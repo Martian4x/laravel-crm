@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
 use Webkul\Core\Providers\CoreServiceProvider;
-use Webkul\Installer\Database\Seeders\DatabaseSeeder as KrayinDatabaseSeeder;
+use Webkul\Installer\Database\Seeders\DatabaseSeeder as AzimioCustomersDatabaseSeeder;
 use Webkul\Installer\Events\ComposerEvents;
 
 use function Laravel\Prompts\password;
@@ -135,8 +135,8 @@ class Installer extends Command
         $this->warn('Step: Migrating all tables...');
         $this->call('migrate:fresh');
 
-        $this->warn('Step: Seeding basic data for Krayin kickstart...');
-        $this->info(app(KrayinDatabaseSeeder::class)->run([
+        $this->warn('Step: Seeding basic data for AzimioCustomers kickstart...');
+        $this->info(app(AzimioCustomersDatabaseSeeder::class)->run([
             'locale'   => $applicationDetails['locale'] ?? 'en',
             'currency' => $applicationDetails['currency'] ?? 'USD',
         ]));
@@ -207,7 +207,7 @@ class Installer extends Command
         $this->updateEnvVariable(
             'APP_NAME',
             'Please enter the application name',
-            env('APP_NAME', 'Krayin CRM')
+            env('APP_NAME', 'AzimioCustomers')
         );
 
         $this->updateEnvVariable(
@@ -363,11 +363,11 @@ class Installer extends Command
 
             $filePath = storage_path('installed');
 
-            File::put($filePath, 'Krayin is successfully installed');
+            File::put($filePath, 'AzimioCustomers is successfully installed');
 
             $this->info('-----------------------------');
             $this->info('Congratulations!');
-            $this->info('The installation has been finished and you can now use Krayin.');
+            $this->info('The installation has been finished and you can now use AzimioCustomers.');
             $this->info('Go to '.env('APP_URL').'/admin/dashboard'.' and authenticate with:');
             $this->info('Email: '.$adminEmail);
             $this->info('Password: '.$adminPassword);

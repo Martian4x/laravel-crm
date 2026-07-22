@@ -1,7 +1,7 @@
 {
-    "name": "krayin/laravel-crm",
+    "name": "azimio/azimiocustomers",
     "type": "project",
-    "description": "Krayin CRM",
+    "description": "AzimioCustomers CRM — multi-tenant CRM for the Tanzanian market (fork of Krayin CRM)",
     "keywords": [
         "framework",
         "laravel"

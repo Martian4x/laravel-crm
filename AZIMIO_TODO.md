@@ -29,21 +29,29 @@ Work through the phases in order — each item is scoped to be done (and tested)
 
 ## Phase 1 — Rebrand to AzimioCustomers
 
-- [ ] 1.1 Global rename sweep of user-visible "Krayin" strings — all files under
-      `packages/Webkul/*/src/Resources/lang/*` (`app.php`), installer views
-      (`packages/Webkul/Installer/src/Resources/views/installer/index.blade.php`),
-      onboarding template (`packages/Webkul/Installer/src/Templates/on-boarding.php`),
-      and email templates seeder (`packages/Webkul/Installer/src/Database/Seeders/EmailTemplate`).
-- [ ] 1.2 Replace logos/favicons/login imagery in `public/` and package asset sources
-      (`packages/Webkul/Admin/src/Resources/assets`); rebuild with `npm run build`.
-- [ ] 1.3 Update `composer.json` root (`krayin/laravel-crm` → `azimio/customers`),
-      `README.md`, `APP_NAME` in `.env.example`, and mail "from" name defaults.
-- [ ] 1.4 Leave internal namespaces (`Webkul\`, `krayin/*` package names in
-      `packages/Webkul/*/composer.json`) **unchanged** — renaming them breaks upstream
-      merges and autoloading for zero user-facing value. Document this decision in README.
-- [ ] 1.5 Update PDF print templates (quotes) header/footer branding
-      (`barryvdh/laravel-dompdf` views in Quote/Admin packages).
-- [ ] 1.6 Check `Core.php` and `Version.php` console command for hardcoded brand/version strings.
+- [x] 1.1 Rename sweep done: installer lang files (all 7 locales), installer view,
+      console installer, on-boarding template, session views (login/forgot/reset
+      "Powered by"), admin `en` lang, `core_config.php` footer default, installed-marker
+      text. Email template seeders contained no brand strings. Links now point to
+      https://azimio.co.tz. **Bonus:** removed the installer's call-home to
+      `updates.krayincrm.com` (it reported domain + admin email/name) and the dead
+      remote-logo route/controller (`ImageCacheController`).
+- [x] 1.2 New AzimioCustomers wordmark SVGs (kept brand blue #0E90D9): Admin
+      `logo.svg` / `dark-logo.svg` / `mobile-*-logo.svg`, installer logo (renamed
+      `azimio-logo.svg`). Assets rebuilt via package-level `npm run build`.
+      **Pending: `favicon.ico` (binary) still shows the Krayin icon — needs a real
+      design asset; replace in `packages/Webkul/Admin/src/Resources/assets/images/`
+      and `packages/Webkul/Installer/src/Resources/assets/images/`.** Ditto a proper
+      designed logo to replace the placeholder wordmark when brand assets exist.
+- [x] 1.3 Root `composer.json` renamed to `azimio/azimiocustomers`; `README.md`
+      rewritten; `.env.example` `APP_NAME='AzimioCustomers'` (mail from-name derives
+      from APP_NAME).
+- [x] 1.4 Internal `Webkul\` namespaces and `krayin/*` package names kept; decision
+      documented in README "Architecture notes".
+- [x] 1.5 Quote PDF templates checked — no brand strings (they render org/tenant data
+      only); per-tenant PDF branding lands in Phase 4.3.
+- [x] 1.6 `Version.php` rebranded (`azimio-crm:version`); ICS `PRODID` in
+      Automation's Activity helper rebranded; `Core.php` retains only internal comments.
 
 ## Phase 2 — Localization: TZS + Swahili/English only
 

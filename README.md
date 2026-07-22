@@ -1,153 +1,65 @@
 <p align="center">
-    <a href="https://krayincrm.com">
-        <picture>
-            <source media="(prefers-color-scheme: dark)" height="100" srcset="packages/Webkul/Admin/src/Resources/assets/images/dark-logo.svg">
-            <source media="(prefers-color-scheme: light)" height="100" srcset="packages/Webkul/Admin/src/Resources/assets/images/logo.svg">
-            <img alt="Krayin CRM" height="100" src="packages/Webkul/Admin/src/Resources/assets/images/logo.svg">
-        </picture>
-    </a>
+    <picture>
+        <source media="(prefers-color-scheme: dark)" height="100" srcset="packages/Webkul/Admin/src/Resources/assets/images/dark-logo.svg">
+        <source media="(prefers-color-scheme: light)" height="100" srcset="packages/Webkul/Admin/src/Resources/assets/images/logo.svg">
+        <img alt="AzimioCustomers" height="100" src="packages/Webkul/Admin/src/Resources/assets/images/logo.svg">
+    </picture>
 </p>
 
-<p align="center">
-<a href="https://packagist.org/packages/krayin/laravel-crm"><img src="https://poser.pugx.org/krayin/laravel-crm/d/total.svg" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/krayin/laravel-crm"><img src="https://poser.pugx.org/krayin/laravel-crm/v/stable.svg" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/krayin/laravel-crm"><img src="https://poser.pugx.org/krayin/laravel-crm/license.svg" alt="License"></a>
-</p>
+# AzimioCustomers
 
+**AzimioCustomers** is a multi-tenant CRM tailored for the Tanzanian market —
+Swahili & English, Tanzanian Shilling (TZS), and multiple companies managed
+under one installation.
 
-![enter image description here](https://raw.githubusercontent.com/krayin/temp-media/master/dashboard.png)
+It is a fork of [Krayin CRM](https://github.com/krayin/laravel-crm) v2.1
+(Laravel 10 + Vue.js), rebranded and extended. See
+[AZIMIO_TODO.md](AZIMIO_TODO.md) for the full roadmap and progress.
 
-## Topics
+## Key differences from upstream Krayin
 
-1. [Introduction](#introduction)
-2. [Documentation](#documentation)
-3. [Requirements](#requirements)
-4. [Installation & Configuration](#installation-and-configuration)
-4. [Docker Installation](https://devdocs.krayincrm.com/2.0/introduction/docker.html)
-5. [Krayin Cloud System](#krayin-cloud-system)
-6. [License](#license)
-7. [Security Vulnerabilities](#security-vulnerabilities)
+- **Multi-tenant**: single database, row-level tenancy (`tenant_id` on all
+  business tables). Multiple companies share one domain/host; a platform
+  super admin manages tenants.
+- **Localization**: English and Swahili only; TZS as default currency;
+  `Africa/Dar_es_Salaam` timezone.
+- **Branding**: AzimioCustomers branding throughout; per-tenant custom
+  branding (logo, colors) planned.
+- **Privacy**: the upstream installer's call-home to `updates.krayincrm.com`
+  (which reported the domain and admin contact) has been removed.
 
-### Introduction
+## Architecture notes
 
-[Krayin CRM](https://krayincrm.com) is a hand tailored CRM framework built on some of the hottest opensource technologies
-such as [Laravel](https://laravel.com) (a [PHP](https://secure.php.net/) framework) and [Vue.js](https://vuejs.org)
-a progressive Javascript framework.
+- Upstream code lives in `packages/Webkul/*`. The internal `Webkul\` PHP
+  namespaces and `krayin/*` package names are **intentionally kept** so
+  upstream fixes can still be merged. Only user-visible branding was changed.
+- All AzimioCustomers-specific code lives in `packages/Azimio/*`
+  (e.g. `Azimio\Tenancy`).
+- The `2.1` branch tracks upstream; development happens on
+  `azimiocustomers-dev`.
 
-**Free & Opensource Laravel CRM solution for SMEs and Enterprises for complete customer lifecycle management.**
+## Requirements
 
-**Read our documentation: [Krayin CRM Docs](https://devdocs.krayincrm.com/)**
+- PHP 8.2+, Composer
+- MySQL 8 / MariaDB 10.4+
+- Node.js 18+ (asset builds via Vite)
 
-**We also have a forum for any type of concerns, feature requests, or discussions. Please visit: [Krayin CRM Forums](https://forums.krayincrm.com/)**
+## Installation (development)
 
-# Visit our live [Demo](https://demo.krayincrm.com)
-
-<a href="javascript:void();">
-    <img class="flag-img" src="https://raw.githubusercontent.com/krayin/temp-media/master/visit-our-live-demo.png" alt="Chinese" width="100%">
-</a>
-
-It packs in lots of features that will allow your E-Commerce business to scale in no time:
-
--   Descriptive and Simple Admin Panel.
--   Admin Dashboard.
--   Custom Attributes.
--   Built on Modular Approach.
--   Email parsing via Sendgrid.
--   Check out [these features and more](https://krayincrm.com/features/).
-
-**For Developers**:
-Take advantage of two of the hottest frameworks used in this project -- Laravel and Vue.js -- both of which have been used in Krayin CRM.
-
-### Documentation
-
-#### Krayin Documentation [https://devdocs.krayincrm.com](https://devdocs.krayincrm.com)
-
-### Requirements
-
--   **SERVER**: Apache 2 or NGINX.
--   **RAM**: 3 GB or higher.
--   **PHP**: 8.1 or higher
--   **For MySQL users**: 5.7.23 or higher.
--   **For MariaDB users**: 10.2.7 or Higher.
--   **Node**: 8.11.3 LTS or higher.
--   **Composer**: 2.5 or higher
-
-### Installation and Configuration
-
-##### Execute these commands below, in order
-
-```
-composer create-project
-```
-
--   Find **.env** file in root directory and change the **APP_URL** param to your **domain**.
-
--   Also, Configure the **Mail** and **Database** parameters inside **.env** file.
-
-```
-php artisan krayin-crm:install
-```
-
-**To execute Krayin**:
-
-##### On server:
-
-Warning: Before going into production mode we recommend you uninstall developer dependencies.
-In order to do that, run the command below:
-
-> composer install --no-dev
-
-```
-Open the specified entry point in your hosts file in your browser or make an entry in hosts file if not done.
-```
-
-##### On local:
-
-```
-php artisan route:clear
+```bash
+composer install
+cp .env.example .env        # configure DB, APP_URL, etc.
+php artisan key:generate
+php artisan migrate
+php artisan db:seed
+php artisan db:seed --class="Azimio\Tenancy\Database\Seeders\DevTenantSeeder"
+npm install && npm run build
 php artisan serve
 ```
 
+The dev tenant seeder creates two demo tenants (Twiga Traders Ltd, Kilimanjaro
+Suppliers Co) and promotes the primary account to platform super admin.
 
-**How to log in as admin:**
+## License
 
-> _http(s)://example.com/admin/login_
-
-```
-email:admin@example.com
-password:admin123
-```
-
-### Krayin Cloud Hosting
-
-[Krayin CRM Cloud Hosting](https://krayincrm.com/crm-cloud-hosting) is a fully managed hosting solution where our team sets up, secures, and configures your Krayin CRM on reliable infrastructure.
-
-Get a ready-to-use CRM on your own domain, without manual installation or infrastructure complexity, and focus on growing your business while we handle the technology.
-
-![Krayin CRM Cloud Hosting](https://raw.githubusercontent.com/krayin/temp-media/master/cloud_hosting.png)
-
-### Krayin CRM Multi Tenant SaaS
-
-[Krayin CRM Multi Tenant SaaS](https://krayincrm.com/extensions/krayin-crm-multi-tenant-saas-extension/) Krayin Multitenant SaaS is a Laravel-based CRM solution that allows multiple businesses (tenants) to use a single application instance while keeping their data isolated and secure.
-
-![enter image description here](https://raw.githubusercontent.com/krayin/temp-media/master/krayin-saas.png)
-
-### WhatsApp CRM Integration
-
-[Krayin CRM WhatsApp](https://krayincrm.com/extensions/krayin-crm-whatsapp-extension/) Extension enables the store administrator to generate leads via their WhatsApp number.
-
-![enter image description here](https://raw.githubusercontent.com/krayin/temp-media/master/krayin-crm-whatsapp-integration.png)
-
-### VoIP CRM Integration
-
-[Krayin CRM VoIP](https://krayincrm.com/extensions/krayin-crm-voip/) extension allows the user to make Trunk calls over a broadband Internet connection and the user can also perform Inbound routes.
-
-![enter image description here](https://raw.githubusercontent.com/krayin/temp-media/master/krayin-voip.png)
-
-### License
-
-Krayin CRM is a fully open-source CRM framework which will always be free under the [MIT License](https://github.com/krayin/laravel-crm/blob/2.1/LICENSE).
-
-### Security Vulnerabilities
-
-Please don't disclose security vulnerabilities publicly. If you find any security vulnerability in Krayin CRM then please email us: sales@krayincrm.com.
+MIT — see [LICENSE](LICENSE). Based on Krayin CRM by Webkul, also MIT-licensed.

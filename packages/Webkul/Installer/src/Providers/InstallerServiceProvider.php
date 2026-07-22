@@ -38,14 +38,6 @@ class InstallerServiceProvider extends ServiceProvider
         Event::listen('krayin.installed', 'Webkul\Installer\Listeners\Installer@installed');
 
         $this->loadTranslationsFrom(__DIR__.'/../Resources/lang', 'installer');
-
-        /**
-         * Route to access template applied image file
-         */
-        $this->app['router']->get('cache/{filename}', [
-            'uses' => 'Webkul\Installer\Http\Controllers\ImageCacheController@getImage',
-            'as'   => 'image_cache',
-        ])->where(['filename' => '[ \w\\.\\/\\-\\@\(\)\=]+']);
     }
 
     /**
