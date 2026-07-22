@@ -2,12 +2,15 @@
 
 namespace Webkul\Marketing\Models;
 
+use Azimio\Tenancy\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Webkul\EmailTemplate\Models\EmailTemplateProxy;
 use Webkul\Marketing\Contracts\Campaign as CampaignContract;
 
 class Campaign extends Model implements CampaignContract
 {
+    use BelongsToTenant;
+
     /**
      * Define the table for the model.
      *

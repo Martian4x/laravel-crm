@@ -81,37 +81,50 @@ Work through the phases in order — each item is scoped to be done (and tested)
 
 ## Phase 3 — Multi-Tenancy Core
 
-- [ ] 3.1 Migration: `tenants` table — name, slug, logo, primary color, status
-      (active/suspended), locale default, currency, plan/limits fields, timestamps.
-- [ ] 3.2 Migration: add nullable `tenant_id` (indexed, FK) to all business tables:
-      users, groups, roles, leads, persons, organizations, products, quotes, tags,
-      activities, emails, email_templates, workflows, web_forms, warehouses, attributes
-      (custom ones), pipelines/stages, sources/types. Audit full list from
-      `packages/Webkul/Installer/src/Database/Migrations/` + `database/migrations/`.
-- [ ] 3.3 `BelongsToTenant` trait: global scope filtering by current tenant + auto-fill
-      `tenant_id` on create. Apply to every model listed in 3.2 (models live in
-      `packages/Webkul/*/src/Models/`).
-- [ ] 3.4 Tenant context resolver: middleware that sets current tenant from the
-      authenticated user; a `Tenant` facade/helper (`tenant()`) for the active tenant.
+- [x] 3.1 `tenants` table created in Phase 0 (`packages/Azimio/Tenancy`).
+- [x] 3.2 `tenant_id` (nullable, indexed, FK, cascade) added to 22 business tables via
+      one loop migration (`2026_07_22_000004`). Child/pivot tables (quote_items,
+      lead_tags, attribute_values, ...) intentionally inherit tenancy through their
+      parent row. Canonical strict/shared table lists live in
+      `Azimio\Tenancy\TenantTables`.
+- [x] 3.3 `BelongsToTenant` trait (global `TenantScope` + auto-stamp on create +
+      `withoutTenancy()` escape hatch) applied to 23 models. Two scoping modes:
+      **strict** (leads, persons, orgs, products, quotes, activities, emails, tags,
+      users, groups, warehouses, web forms, webhooks, workflows, campaigns, events,
+      core_config) and **shared platform defaults** (`$sharesPlatformDefaults`:
+      attributes, pipelines, sources, types, roles, email templates — NULL-tenant rows
+      visible to every tenant, so fresh tenants work without copying seed data).
+- [x] 3.4 `TenantManager` singleton + `tenant()` / `tenant_id()` helpers + `runAs()`;
+      `IdentifyTenant` middleware (alias `tenant`) resolves tenant from the logged-in
+      user, blocks suspended tenants (logout + flash), and leaves super admins/console
+      unscoped. Admin route middleware reordered to
+      `['web', 'user', 'tenant', 'admin_locale']` so tenant context exists before
+      config reads.
 - [ ] 3.5 Super-admin panel (new package, e.g. `packages/Azimio/SuperAdmin`):
       CRUD tenants, suspend/activate, impersonate ("login as tenant admin"),
       usage stats (users, leads, storage per tenant).
-- [ ] 3.6 Tenant onboarding flow: creating a tenant seeds its defaults — admin user,
-      default pipeline/stages, lead sources/types, email templates (Swahili + English),
-      roles. Extract from `Installer/src/Database/Seeders/*` into a reusable
-      `TenantSeeder`.
-- [ ] 3.7 Auth changes: login stays on the shared domain; scope unique-email validation
-      to tenant (or keep emails globally unique — decide; globally unique is simpler
-      and avoids ambiguous login). Block login for suspended tenants.
-- [ ] 3.8 Tenant-scope the config/settings system (`core_config` table via
-      `SystemConfig`): settings like locale, branding, email must be per-tenant.
+- [x] 3.6 Tenant onboarding: `TenantOnboarder` service (tenant + admin user in one
+      transaction, admin gets the shared platform Administrator role and the tenant's
+      locale) + `php artisan azimio:tenant:create "Name" email@x.tz --locale=sw`
+      console command. No per-tenant copies needed thanks to shared platform defaults.
+- [x] 3.7 **DECIDED: emails stay globally unique** (single login form on a shared
+      domain, no ambiguity). Suspended tenants: users are logged out on the next
+      request by `IdentifyTenant` with a translated (en/sw) message.
+- [x] 3.8 `core_config` is tenant-scoped (strict): tenant settings reads/writes hit
+      their own rows; missing rows fall back to file config defaults. Global rows
+      (NULL) remain for the platform/login screen.
 - [ ] 3.9 Tenant-scope file storage: uploads under `storage/app/tenants/{id}/...`;
       scope IMAP/mail settings (`webklex/laravel-imap` inboxes are per-tenant).
 - [ ] 3.10 Tenant-scope queued jobs, workflows/automation, and scheduled tasks —
       every job must carry and restore tenant context.
-- [ ] 3.11 Tenant-scope DataGrids (`packages/Webkul/DataGrid`) — verify grids use
-      Eloquent (scope applies) vs raw query builder (scope must be added manually).
-      Same audit for repositories using `DB::` directly and for global search.
+- [x] 3.11 DataGrids **audited: every grid uses raw `DB::table()`** (bypasses Eloquent
+      scopes). Fixed centrally with zero upstream edits: wildcard listener
+      `ScopeDataGridToTenant` on `datagrid.*.query_builder.set.after` constrains each
+      grid's root table per `TenantTables` (strict or shared). Covers listings,
+      exports, and mass-action id selection.
+      **Pending sub-item: audit remaining raw `DB::` usage outside DataGrids
+      (reporting helpers in `Admin/Helpers/Reporting`, global search) — same
+      root-table filter approach applies.**
 - [ ] 3.12 Web forms (`WebForm` package) are publicly embedded — form URLs/keys must
       encode the tenant so submissions land in the right tenant.
 - [ ] 3.13 REST API / Sanctum tokens: tokens resolve tenant from user; test cross-tenant

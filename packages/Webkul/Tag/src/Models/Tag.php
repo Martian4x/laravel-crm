@@ -2,12 +2,15 @@
 
 namespace Webkul\Tag\Models;
 
+use Azimio\Tenancy\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Webkul\Tag\Contracts\Tag as TagContract;
 use Webkul\User\Models\UserProxy;
 
 class Tag extends Model implements TagContract
 {
+    use BelongsToTenant;
+
     protected $table = 'tags';
 
     /**

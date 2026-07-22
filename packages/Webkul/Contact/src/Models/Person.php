@@ -2,6 +2,7 @@
 
 namespace Webkul\Contact\Models;
 
+use Azimio\Tenancy\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,6 +19,8 @@ use Webkul\User\Models\UserProxy;
 
 class Person extends Model implements PersonContract
 {
+    use BelongsToTenant;
+
     use CustomAttribute, HasFactory, LogsActivity;
 
     /**

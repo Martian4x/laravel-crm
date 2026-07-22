@@ -2,6 +2,7 @@
 
 namespace Webkul\User\Models;
 
+use Azimio\Tenancy\Concerns\BelongsToTenant;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
@@ -10,6 +11,8 @@ use Webkul\User\Contracts\User as UserContract;
 
 class User extends Authenticatable implements UserContract
 {
+    use BelongsToTenant;
+
     use HasApiTokens, Notifiable;
 
     /**

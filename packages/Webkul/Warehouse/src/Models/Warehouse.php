@@ -2,6 +2,7 @@
 
 namespace Webkul\Warehouse\Models;
 
+use Azimio\Tenancy\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Webkul\Activity\Models\ActivityProxy;
 use Webkul\Activity\Traits\LogsActivity;
@@ -11,6 +12,8 @@ use Webkul\Warehouse\Contracts\Warehouse as WarehouseContract;
 
 class Warehouse extends Model implements WarehouseContract
 {
+    use BelongsToTenant;
+
     use CustomAttribute, LogsActivity;
 
     /**

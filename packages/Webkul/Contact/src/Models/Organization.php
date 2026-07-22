@@ -2,6 +2,7 @@
 
 namespace Webkul\Contact\Models;
 
+use Azimio\Tenancy\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Webkul\Attribute\Traits\CustomAttribute;
@@ -10,6 +11,8 @@ use Webkul\User\Models\UserProxy;
 
 class Organization extends Model implements OrganizationContract
 {
+    use BelongsToTenant;
+
     use CustomAttribute;
 
     protected $casts = [

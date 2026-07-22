@@ -2,6 +2,7 @@
 
 namespace Webkul\Activity\Models;
 
+use Azimio\Tenancy\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Webkul\Activity\Contracts\Activity as ActivityContract;
 use Webkul\Contact\Models\PersonProxy;
@@ -12,6 +13,8 @@ use Webkul\Warehouse\Models\WarehouseProxy;
 
 class Activity extends Model implements ActivityContract
 {
+    use BelongsToTenant;
+
     /**
      * Define table name of property
      *

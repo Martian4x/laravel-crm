@@ -2,6 +2,7 @@
 
 namespace Webkul\Lead\Models;
 
+use Azimio\Tenancy\Concerns\BelongsToTenant;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,6 +20,8 @@ use Webkul\User\Models\UserProxy;
 
 class Lead extends Model implements LeadContract
 {
+    use BelongsToTenant;
+
     use CustomAttribute, LogsActivity;
 
     /**

@@ -49,9 +49,10 @@ return [
     ],
 
     'users' => [
-        'activate-warning' => 'Akaunti yako bado haijawashwa. Tafadhali wasiliana na msimamizi.',
-        'login-error'      => 'Taarifa za kuingia hazilingani na kumbukumbu zetu.',
-        'not-permission'   => 'Huna ruhusa ya kuingia kwenye paneli ya msimamizi.',
+        'activate-warning'  => 'Akaunti yako bado haijawashwa. Tafadhali wasiliana na msimamizi.',
+        'login-error'       => 'Taarifa za kuingia hazilingani na kumbukumbu zetu.',
+        'not-permission'    => 'Huna ruhusa ya kuingia kwenye paneli ya msimamizi.',
+        'suspended-tenant'  => 'Akaunti ya kampuni yako imesimamishwa. Tafadhali wasiliana na msaada.',
 
         'login' => [
             'email'                => 'Anwani ya Barua Pepe',

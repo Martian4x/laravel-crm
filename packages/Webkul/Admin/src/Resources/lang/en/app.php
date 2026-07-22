@@ -49,9 +49,10 @@ return [
     ],
 
     'users' => [
-        'activate-warning' => 'Your account is not activated yet. Please contact the administrator.',
-        'login-error'      => 'The credentials do not match our records.',
-        'not-permission'   => 'You do not have permission to access the admin panel.',
+        'activate-warning'  => 'Your account is not activated yet. Please contact the administrator.',
+        'login-error'       => 'The credentials do not match our records.',
+        'not-permission'    => 'You do not have permission to access the admin panel.',
+        'suspended-tenant'  => 'Your company account is suspended. Please contact support.',
 
         'login' => [
             'email'                => 'Email Address',
