@@ -3,6 +3,7 @@
 namespace Azimio\Tenancy\Providers;
 
 use Azimio\Tenancy\Http\Controllers\TenantController;
+use Azimio\Tenancy\Http\Controllers\UserController;
 use Azimio\Tenancy\Http\Middleware\EnsureSuperAdmin;
 use Azimio\Tenancy\Http\Middleware\IdentifyTenant;
 use Azimio\Tenancy\Listeners\ScopeDataGridToTenant;
@@ -98,7 +99,28 @@ class TenancyServiceProvider extends ServiceProvider
 
                 Route::post('tenants/{id}/toggle', [TenantController::class, 'toggleStatus'])->name('super.tenants.toggle');
 
+                Route::get('tenants/{id}/edit', [TenantController::class, 'edit'])->name('super.tenants.edit');
+
+                Route::put('tenants/{id}', [TenantController::class, 'update'])->name('super.tenants.update');
+
+                Route::delete('tenants/{id}', [TenantController::class, 'destroy'])->name('super.tenants.destroy');
+
                 Route::post('tenants/{id}/impersonate', [TenantController::class, 'impersonate'])->name('super.tenants.impersonate');
+
+                // Cross-tenant user management.
+                Route::get('users', [UserController::class, 'index'])->name('super.users.index');
+
+                Route::get('users/create', [UserController::class, 'create'])->name('super.users.create');
+
+                Route::post('users', [UserController::class, 'store'])->name('super.users.store');
+
+                Route::get('users/{id}/edit', [UserController::class, 'edit'])->name('super.users.edit');
+
+                Route::put('users/{id}', [UserController::class, 'update'])->name('super.users.update');
+
+                Route::put('users/{id}/password', [UserController::class, 'updatePassword'])->name('super.users.password');
+
+                Route::delete('users/{id}', [UserController::class, 'destroy'])->name('super.users.destroy');
             });
 
         // Reachable while impersonating a tenant user, hence no super_admin middleware.

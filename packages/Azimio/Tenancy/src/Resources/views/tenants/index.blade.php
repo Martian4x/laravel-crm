@@ -11,6 +11,9 @@
             </div>
         </div>
 
+        <!-- Tabs -->
+        @include('azimio::partials.nav', ['active' => 'tenants'])
+
         <!-- Create tenant -->
         <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
             <p class="mb-4 text-base font-semibold text-gray-800 dark:text-white">
@@ -86,7 +89,11 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3">
-                                <div class="flex gap-2">
+                                <div class="flex flex-wrap gap-2">
+                                    <a href="{{ route('super.tenants.edit', $tenant->id) }}" class="secondary-button !px-3 !py-1 text-xs">
+                                        @lang('azimio::app.tenants.edit-btn')
+                                    </a>
+
                                     <form method="POST" action="{{ route('super.tenants.toggle', $tenant->id) }}">
                                         @csrf
                                         <button type="submit" class="secondary-button !px-3 !py-1 text-xs">

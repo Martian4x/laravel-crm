@@ -77,6 +77,65 @@ class TenantController extends Controller
     }
 
     /**
+     * Show the edit form for a tenant.
+     */
+    public function edit(int $id)
+    {
+        $tenant = Tenant::findOrFail($id);
+
+        return view('azimio::tenants.edit', [
+            'tenant'  => $tenant,
+            'locales' => config('app.available_locales'),
+        ]);
+    }
+
+    /**
+     * Update a tenant's editable settings.
+     */
+    public function update(int $id)
+    {
+        $tenant = Tenant::findOrFail($id);
+
+        $validated = request()->validate([
+            'name'      => 'required|string|max:255',
+            'locale'    => 'required|in:'.implode(',', array_keys(config('app.available_locales'))),
+            'currency'  => 'nullable|string|max:10',
+            'plan'      => 'nullable|string|max:50',
+            'max_users' => 'nullable|integer|min:1|max:9999',
+        ]);
+
+        $tenant->update([
+            'name'      => $validated['name'],
+            'locale'    => $validated['locale'],
+            'currency'  => $validated['currency'] ?: null,
+            'plan'      => $validated['plan'] ?: null,
+            'max_users' => $validated['max_users'] ?: null,
+        ]);
+
+        session()->flash('success', trans('azimio::app.tenants.updated'));
+
+        return redirect()->route('super.tenants.index');
+    }
+
+    /**
+     * Delete a tenant and all its users.
+     */
+    public function destroy(int $id)
+    {
+        $tenant = Tenant::findOrFail($id);
+
+        \Webkul\User\Models\User::withoutTenancy()
+            ->where('tenant_id', $tenant->id)
+            ->delete();
+
+        $tenant->delete();
+
+        session()->flash('success', trans('azimio::app.tenants.deleted'));
+
+        return redirect()->route('super.tenants.index');
+    }
+
+    /**
      * Log in as the tenant's first admin user. The super admin's id is kept
      * in the session so they can return via the revert route.
      */
