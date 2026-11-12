@@ -293,6 +293,22 @@ scoped to be done one by one, in the suggested order at the end.
       as a tenant admin (carried over from 6.1 — automated smoke covers page
       rendering, not every mutation path).
 
+### C. (continued)
+
+- [x] 7.14 **Cross-tenant user management** in the super panel
+      (`/admin/super/users`): list every user across all tenants (search by
+      name/email, filter by company, paginated), with **add / edit / delete**
+      and a **password reset**. Editing covers name, email, **company (tenant)
+      affiliation**, **role**, language and active status. Role options filter
+      live (Alpine) to the selected company's roles + shared platform defaults;
+      a server-side guard rejects assigning another company's role. Super admins
+      are shown as platform-level (no company) and the last super admin / your
+      own account cannot be deleted. `tenant_id` is set via `forceFill` (it is
+      intentionally not mass-assignable). "Users" tab added beside "Tenants" and
+      linked from the super-admin dropdown. en/sw. Tests in
+      `SuperAdminUserPanelTest`. **Note: super-panel user creation is not subject
+      to the tenant `max_users` cap — super admins manage plans.**
+
 ### D. Lifecycle & offboarding
 
 - [ ] 7.12 **Tenant data export**: per-tenant Excel/CSV export (leads, persons,

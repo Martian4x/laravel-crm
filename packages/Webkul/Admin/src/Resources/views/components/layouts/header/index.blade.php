@@ -99,6 +99,13 @@
                         >
                             @lang('azimio::app.tenants.title')
                         </a>
+
+                        <a
+                            class="cursor-pointer px-5 py-2 text-base text-gray-800 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-950"
+                            href="{{ route('super.users.index') }}"
+                        >
+                            @lang('azimio::app.users.title')
+                        </a>
                     @endif
 
                     <a
