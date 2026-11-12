@@ -158,3 +158,64 @@ it('rejects assigning a role that belongs to a different tenant', function () {
 
     $foreignRole->forceDelete();
 });
+
+/**
+ * Regression: 'locale' is a nullable field, so Laravel omits it from the
+ * validated array entirely when the request does not send it. Reading it with
+ * ?: then raised "Undefined array key" and returned a 500. Both the create and
+ * the update path are covered here, since only update had a test that happened
+ * to omit the field.
+ */
+it('creates a user when no locale is submitted', function () {
+    test()->actingAs(getDefaultAdmin())
+        ->post(route('super.users.store'), [
+            'name'      => 'No Locale User',
+            'email'     => 'nolocale@super-panel-test.local',
+            'password'  => 'secret123',
+            'tenant_id' => twiga()->id,
+            'role_id'   => platformRoleId(),
+            'status'    => '1',
+        ])
+        ->assertRedirect(route('super.users.index'));
+
+    $user = User::withoutTenancy()->where('email', 'nolocale@super-panel-test.local')->first();
+
+    expect($user)->not->toBeNull()
+        ->and($user->locale)->toBeNull();
+});
+
+it('updates a user when no locale is submitted', function () {
+    $user = makeTenantUser('nolocale-update@super-panel-test.local', twiga()->id);
+
+    test()->actingAs(getDefaultAdmin())
+        ->put(route('super.users.update', $user->id), [
+            'name'      => 'Still Here',
+            'email'     => 'nolocale-update@super-panel-test.local',
+            'tenant_id' => twiga()->id,
+            'role_id'   => platformRoleId(),
+            'status'    => '1',
+        ])
+        ->assertRedirect(route('super.users.index'));
+
+    expect($user->fresh()->name)->toBe('Still Here')
+        ->and($user->fresh()->locale)->toBeNull();
+});
+
+it('clears the locale back to null when an empty value is submitted', function () {
+    $user = makeTenantUser('emptylocale@super-panel-test.local', twiga()->id);
+
+    $user->forceFill(['locale' => 'sw'])->save();
+
+    test()->actingAs(getDefaultAdmin())
+        ->put(route('super.users.update', $user->id), [
+            'name'      => 'Fixture User',
+            'email'     => 'emptylocale@super-panel-test.local',
+            'tenant_id' => twiga()->id,
+            'role_id'   => platformRoleId(),
+            'locale'    => '',
+            'status'    => '1',
+        ])
+        ->assertRedirect(route('super.users.index'));
+
+    expect($user->fresh()->locale)->toBeNull();
+});

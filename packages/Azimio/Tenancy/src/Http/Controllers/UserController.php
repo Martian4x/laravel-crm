@@ -77,7 +77,7 @@ class UserController extends Controller
             'password'        => Hash::make($validated['password']),
             'tenant_id'       => $validated['tenant_id'],
             'role_id'         => $validated['role_id'],
-            'locale'          => $validated['locale'] ?: null,
+            'locale'          => ($validated['locale'] ?? null) ?: null,
             'status'          => request()->boolean('status'),
             'view_permission' => 'global',
         ])->save();
@@ -137,7 +137,7 @@ class UserController extends Controller
             'email'     => $validated['email'],
             'tenant_id' => $tenantId,
             'role_id'   => $validated['role_id'],
-            'locale'    => $validated['locale'] ?: null,
+            'locale'    => ($validated['locale'] ?? null) ?: null,
             'status'    => request()->boolean('status'),
         ])->save();
 
