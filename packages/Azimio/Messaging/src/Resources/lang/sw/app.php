@@ -6,6 +6,7 @@ return [
     'acl' => [
         'sms'      => 'Ujumbe',
         'create'   => 'Tuma SMS',
+        'bulk'     => 'SMS kwa Wingi',
         'credits'  => 'Salio la SMS',
         'logs'     => 'Kumbukumbu za SMS',
         'settings' => 'Mipangilio ya SMS',
@@ -92,6 +93,37 @@ return [
 
     'sms' => [
         'title' => 'SMS',
+
+        'bulk' => [
+            'title'         => 'SMS kwa Wingi',
+            'mass-action'   => 'Tuma SMS',
+            'confirm-title' => 'Thibitisha utumaji huu',
+            'back'          => 'Rudi kuandika',
+            'name'          => 'Jina la kampeni',
+            'name-placeholder' => 'Litaonekana kwenye historia ya makundi',
+            'default-name'  => 'SMS kwa wingi',
+            'numbers'       => 'Namba',
+            'numbers-placeholder' => "0712345678\n0765432109",
+            'numbers-help'  => 'Moja kwa kila mstari, au tenganisha kwa koma. Namba zinazojirudia na zilizojitoa huondolewa kabla ya kutuma.',
+            'category'      => 'Aina',
+            'category-transactional' => 'Kiutendaji (oda, nukuu, kumbusho)',
+            'category-marketing'     => 'Matangazo (promosheni, kampeni)',
+            'category-help' => 'Jumbe za matangazo huzuiliwa nje ya saa zinazoruhusiwa na hubeba maelezo ya kujitoa. Za kiutendaji hazizuiliwi.',
+            'merge-note'    => 'Unaweza kutumia nafasi za kujaza: :fields',
+            'review'        => 'Kagua kabla ya kutuma',
+            'from-selection' => 'Unatumia rekodi :count ulizochagua kwenye orodha.',
+            'no-audience'   => 'Hakuna wapokeaji waliotolewa.',
+            'will-send'     => 'Itatumwa kwa',
+            'each'          => 'kwa kila ujumbe',
+            'total-credits' => 'Jumla ya salio',
+            'send-now'      => 'Tuma kwa wapokeaji :count kwa salio :credits',
+            'queued'        => 'Imepangwa kwa wapokeaji :count.',
+            'and-more'      => '…na :count zaidi',
+            'excluded-duplicates' => 'Zilizojirudia, zimeondolewa',
+            'excluded-optouts'    => 'Zilizojitoa, hazitatumwa',
+            'excluded-invalid'    => 'Zisizo sahihi, hazitatumwa',
+            'cost-changed'  => 'Gharama imebadilika tangu ulipokagua (:confirmed, sasa salio :now). Kagua takwimu kisha thibitisha tena.',
+        ],
 
         'log' => [
             'title'          => 'Kumbukumbu za SMS',

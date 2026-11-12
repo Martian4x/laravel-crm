@@ -6,6 +6,7 @@ return [
     'acl' => [
         'sms'      => 'Messaging',
         'create'   => 'Send SMS',
+        'bulk'     => 'Bulk SMS',
         'credits'  => 'SMS Credits',
         'logs'     => 'SMS Log',
         'settings' => 'SMS Settings',
@@ -98,6 +99,37 @@ return [
 
     'sms' => [
         'title' => 'SMS',
+
+        'bulk' => [
+            'title'         => 'Bulk SMS',
+            'mass-action'   => 'Send SMS',
+            'confirm-title' => 'Confirm this send',
+            'back'          => 'Back to compose',
+            'name'          => 'Campaign name',
+            'name-placeholder' => 'Shown in your batch history',
+            'default-name'  => 'Bulk SMS',
+            'numbers'       => 'Numbers',
+            'numbers-placeholder' => "0712345678\n0765432109",
+            'numbers-help'  => 'One per line, or separated by commas. Duplicates and opted-out numbers are removed before anything is sent.',
+            'category'      => 'Type',
+            'category-transactional' => 'Transactional (order, quote, reminder)',
+            'category-marketing'     => 'Marketing (promotion, campaign)',
+            'category-help' => 'Marketing messages are held outside permitted hours and carry an opt-out notice. Transactional messages are not.',
+            'merge-note'    => 'You can use merge fields: :fields',
+            'review'        => 'Review before sending',
+            'from-selection' => 'Using :count record(s) selected from the list.',
+            'no-audience'   => 'No recipients were given.',
+            'will-send'     => 'Will send to',
+            'each'          => 'per message',
+            'total-credits' => 'Total credits',
+            'send-now'      => 'Send to :count recipients for :credits credits',
+            'queued'        => 'Queued to :count recipients.',
+            'and-more'      => '…and :count more',
+            'excluded-duplicates' => 'Duplicates removed',
+            'excluded-optouts'    => 'Opted out, excluded',
+            'excluded-invalid'    => 'Invalid, not sent',
+            'cost-changed'  => 'The cost changed since you reviewed it (:confirmed, now :now credits). Check the figures and confirm again.',
+        ],
 
         'log' => [
             'title'          => 'SMS Log',

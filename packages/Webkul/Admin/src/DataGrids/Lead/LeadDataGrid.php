@@ -315,6 +315,21 @@ class LeadDataGrid extends DataGrid
             'url'    => route('admin.leads.mass_delete'),
         ]);
 
+        /**
+         * Azimio Phase 8.8: bulk SMS to the selected leads. Each lead's
+         * number comes from its person, which is the one holding the phone.
+         * Opens the compose screen only — nothing is sent or charged until
+         * the confirmation step.
+         */
+        if (bouncer()->hasPermission('sms.bulk')) {
+            $this->addMassAction([
+                'icon'   => 'icon-mail',
+                'title'  => trans('messaging::app.sms.bulk.mass-action'),
+                'method' => 'POST',
+                'url'    => route('admin.sms.bulk.from_selection', ['entity' => 'lead']),
+            ]);
+        }
+
         $this->addMassAction([
             'title'   => trans('admin::app.leads.index.datagrid.mass-update'),
             'url'     => route('admin.leads.mass_update'),

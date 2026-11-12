@@ -568,6 +568,16 @@ return [
         ],
         'sort'  => 1,
     ], [
+        'key'   => 'sms.bulk',
+        'name'  => 'messaging::app.acl.bulk',
+        'route' => [
+            'admin.sms.bulk.index',
+            'admin.sms.bulk.from_selection',
+            'admin.sms.bulk.confirm',
+            'admin.sms.bulk.send',
+        ],
+        'sort'  => 2,
+    ], [
         'key'   => 'sms.credits',
         'name'  => 'messaging::app.acl.credits',
         'route' => [

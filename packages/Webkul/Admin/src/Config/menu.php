@@ -305,6 +305,12 @@ return [
         'sort'       => 1,
         'icon-class' => 'icon-mail',
     ], [
+        'key'        => 'sms.bulk',
+        'name'       => 'messaging::app.sms.bulk.title',
+        'route'      => 'admin.sms.bulk.index',
+        'sort'       => 2,
+        'icon-class' => 'icon-mail',
+    ], [
         'key'        => 'sms.credits',
         'name'       => 'messaging::app.requests.title',
         'route'      => 'admin.sms.credits.index',

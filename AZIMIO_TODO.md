@@ -695,7 +695,31 @@ unless there is a reason to revisit, and record the reason here if so.
       ("Send SMS" beside the existing call/WhatsApp actions) and from a standalone
       compose screen. Live character/segment/credit counter, template picker,
       merge-field preview against the actual recipient, opt-out warning.
-- [ ] 8.8 **Bulk send.** Build the audience from a DataGrid selection (persons or
+- [x] 8.8 **Bulk send.** **DONE.** `BulkController` (index, fromSelection,
+      confirm, send), two views, **Send SMS mass actions on the Person and
+      Lead DataGrids**, `sms.bulk` ACL key + menu entry, en/sw. 10 tests.
+      **Three steps on purpose: compose → CONFIRM → send.** Billing is per
+      segment (8.0.1), so a 2-segment body to 4,000 people is 8,000 credits.
+      Nothing is written or reserved until the final POST — a test asserts
+      zero messages and an unchanged balance after the confirmation screen
+      has been drawn.
+      **The confirmation re-plans at send time and refuses if the cost
+      moved.** The audience, an opt-out or the balance may have changed since
+      the screen was drawn, so the send compares against the figure the user
+      actually confirmed and shows the screen again rather than charging
+      something nobody agreed to. Tested with a deliberately stale figure.
+      **Exclusions are itemised, not counted.** Duplicates, opt-outs and
+      invalid numbers each get their own panel listing the offending input
+      and the reason (a landline says "landline, cannot receive SMS"), so a
+      user can fix their list rather than wonder where 47 contacts went.
+      **Audience ids are re-resolved through the tenant-scoped models**, so a
+      tampered form cannot reach another company's contacts — tested with a
+      foreign tenant's person id, which simply does not resolve.
+      **Bug found by the tests:** `$validated['name']` on a nullable field
+      raised "Undefined array key" — the exact trap as the `locale` bug in
+      `260f6429`. Swept the whole package for the pattern; this was the only
+      instance, every other access is on a `required` field.
+      Original scope for reference:
       leads — the mass-action path, already tenant-scoped by Phase 3.11) or by
       pasting/importing numbers. Pre-send summary: recipients after dedupe,
       invalid numbers listed, opt-outs excluded, segments, **total credits and
@@ -832,28 +856,31 @@ unless there is a reason to revisit, and record the reason here if so.
       Original scope for reference:
       approve partially, or reject with a note — approval writes the allocation
       ledger entry in the same transaction and notifies the tenant.
-- [ ] 8.17 **Sender-name approval.** ⚠️ **NEEDS A DECISION — 8.6 undercut the
-      premise.** The original reasoning was "a sender name must be registered
-      with the operator before it will deliver, so a platform admin should
-      approve it." But for a tenant on their **own** provider, the sender name
-      is registered on *their* account, with *their* operator relationship. The
-      platform is not party to it, so a human approving it here asserts nothing
-      — and 8.6 already does something strictly better: it queries the tenant's
-      own provider for the sender names on the account and refuses to activate
-      one that is not there. Automatic, immediate, and actually verified.
-      That leaves a real question:
-      - **If platform mode only ever sends as the fixed `AZIMIOCRM` name**
-        (which is what the Phase 8 goal table says), then there is nothing left
-        for this approval queue to approve, and 8.17 should be **dropped**,
-        with the platform's own sender-ID registration handled once in 8.14.
-      - **If tenants may request custom sender names on the platform account**,
-        then 8.17 is needed in full — because then *we* carry the operator
-        relationship and the registration cost, and a human must decide. That
-        is a product decision, not a technical one: it also implies per-tenant
-        sender-ID fees and a registration workflow with the operator.
-      The `status` column, the `canSend()` gate and the pending state all exist
-      and are used either way, so nothing is wasted by deciding this later —
-      but **decide before building a queue nobody needs.**
+- [~] 8.17 **Sender-name approval — DROPPED by decision, 2026-11-12.**
+      **Decided: tenants may NOT request custom sender names on the platform
+      account.** Platform mode sends as the fixed `AZIMIOCRM` name and nothing
+      else, so there is nothing for a human approval queue to approve, and no
+      queue is being built.
+      Why the item existed and why it no longer does: the original reasoning
+      was "a sender name must be registered with the operator before it
+      delivers, so a platform admin should approve it". But for a tenant on
+      their **own** provider the name is registered on *their* account under
+      *their* operator relationship — the platform is not party to it, so a
+      human clicking approve here would assert nothing. 8.6 already does
+      something strictly better: it queries the tenant's own provider for the
+      names on that account and refuses to activate one that is not there.
+      Automatic, immediate, and actually verified.
+      **What this decision also avoids:** per-tenant sender-ID registration
+      fees, a registration workflow with the operator, and the platform
+      carrying the operator relationship for names it does not control.
+      **Nothing is removed.** `sms_sender_profiles.status`, the
+      `SenderProfileStatus` enum and the `canSend()` gate stay and are load
+      bearing: 8.6 writes `pending` → `approved` on verification, and 8.5
+      refuses to send from a profile that is not approved (tested). The
+      platform profile is approved once in 8.14.
+      **Revisit only if** the product later offers tenants branded sender
+      names on the platform account — at which point this item returns in
+      full, along with the fees and workflow above.
 - [ ] 8.18 **Platform oversight**: cross-tenant message log (read-only, filterable
       by tenant/status/date), usage and spend per tenant per month, top senders,
       failure-rate alerting, and a global **kill switch** to pause all platform-mode
@@ -932,7 +959,8 @@ unless there is a reason to revisit, and record the reason here if so.
 
 **Suggested order:** ~~8.0~~ → ~~8.1~~ → ~~8.2~~ → ~~8.3 (drivers)~~ →
 ~~8.4~~ → ~~8.5~~ → ~~8.6~~ → ~~8.7~~ → ~~8.10~~ → ~~8.14~~ → ~~8.15 (credits)~~ →
-~~8.13 + 8.16 (credit loop)~~ → **8.8 (next — bulk send)** →
+~~8.13 + 8.16~~ → ~~8.8 (bulk)~~ → ~~8.17 (dropped by decision)~~ →
+**8.9 (next — templates CRUD)** →
 8.10 → 8.14 →
 8.15 → 8.17 → 8.8 → 8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 →
 8.22–8.26 continuously, not at the end.

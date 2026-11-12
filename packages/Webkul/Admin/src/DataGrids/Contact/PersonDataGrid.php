@@ -156,5 +156,21 @@ class PersonDataGrid extends DataGrid
                 'url'    => route('admin.contacts.persons.mass_delete'),
             ]);
         }
+
+        /**
+         * Azimio Phase 8.8: send a bulk SMS to the selected contacts. The
+         * grid's selection is already tenant-scoped by the Phase 3.11
+         * listener, and the ids are re-resolved through the Person model
+         * anyway. This only opens the compose screen — nothing is sent or
+         * charged until the confirmation step.
+         */
+        if (bouncer()->hasPermission('sms.bulk')) {
+            $this->addMassAction([
+                'icon'   => 'icon-mail',
+                'title'  => trans('messaging::app.sms.bulk.mass-action'),
+                'method' => 'POST',
+                'url'    => route('admin.sms.bulk.from_selection', ['entity' => 'person']),
+            ]);
+        }
     }
 }

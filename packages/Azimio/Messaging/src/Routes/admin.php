@@ -1,5 +1,6 @@
 <?php
 
+use Azimio\Messaging\Http\Controllers\Admin\BulkController;
 use Azimio\Messaging\Http\Controllers\Admin\ComposeController;
 use Azimio\Messaging\Http\Controllers\Admin\CreditRequestController;
 use Azimio\Messaging\Http\Controllers\Admin\MessageLogController;
@@ -57,6 +58,20 @@ Route::prefix('sms')->group(function () {
 
     Route::post('batches/{id}/retry', [MessageLogController::class, 'retry'])
         ->name('admin.sms.batches.retry');
+
+    // Bulk send (8.8). Compose, confirm, then send — nothing is written or
+    // reserved until the final POST.
+    Route::get('bulk', [BulkController::class, 'index'])
+        ->name('admin.sms.bulk.index');
+
+    Route::post('bulk/from-selection', [BulkController::class, 'fromSelection'])
+        ->name('admin.sms.bulk.from_selection');
+
+    Route::post('bulk/confirm', [BulkController::class, 'confirm'])
+        ->name('admin.sms.bulk.confirm');
+
+    Route::post('bulk/send', [BulkController::class, 'send'])
+        ->name('admin.sms.bulk.send');
 
     // Credit balance and requests (8.13).
     Route::get('credits', [CreditRequestController::class, 'index'])
