@@ -438,10 +438,32 @@ unless there is a reason to revisit, and record the reason here if so.
       en/sw translations resolve, and every middleware alias the provider uses
       exists (`throttle` from the Kernel, `user`/`admin_locale` from
       `AdminServiceProvider`, `tenant`/`super_admin` from Tenancy).
-- [ ] 8.2 **Schema** (migrations `2026_11_12_0000NN_*`), all business tables carrying
-      `tenant_id` and registered in `Azimio\Tenancy\TenantTables`:
-      - `sms_sender_profiles` — **strict**, except `tenant_id = NULL` = the platform
-        `AZIMIOCRM` profile. Columns: `label`, `sender_name`, `driver`
+- [x] 8.2 **Schema** — 9 migrations (`2026_11_12_000001`–`000009`), all registered in
+      `Azimio\Tenancy\TenantTables`, plus the Eloquent layer (8 models, 8 enums)
+      and an isolation test file. Verified: migrated, rolled back all 9, and
+      re-migrated with the seeded tenants intact, so `down()` works and the FK
+      drop order is right.
+      **Two corrections to the spec below, both found while building it:**
+      1. **`sms_sender_profiles` is STRICT, not shared.** The spec said "strict,
+         except `tenant_id = NULL` = the platform profile", which in
+         `TenantTables` terms means SHARED — and SHARED makes NULL rows readable
+         by every tenant. That row holds the platform's provider credentials,
+         and the model's `encrypted:json` cast would hand them back **decrypted**
+         to any tenant that read it. It is now STRICT; the sending service loads
+         the platform profile explicitly via `SenderProfile::platform()`
+         (`withoutTenancy()`), and tenant UI shows the sender name from
+         `config('messaging.platform.sender_name')` instead of from the row.
+         `credentials` is also in `$hidden`, so it stays out of logs, queue
+         payloads and serialised output. Covered by a test.
+      2. **`azimio:tenant:adopt` would have hijacked the platform profile.** It
+         sweeps every STRICT table for NULL `tenant_id` rows and assigns them to
+         one tenant — which, once `sms_sender_profiles` became STRICT, meant the
+         platform's own sending identity and credentials. Added a `NEVER_ADOPT`
+         list to `AdoptOrphanData` alongside the existing super-admin carve-out.
+      Also added `TenantTables::PLATFORM_ONLY` for `sms_webhook_events`, which
+      belongs in neither list: a callback arrives before tenant context exists.
+      - `sms_sender_profiles` — **strict** (see correction 1). Columns: `label`,
+        `sender_name`, `driver`
         (`beem|africastalking|log`), `credentials` (encrypted JSON), `is_default`,
         `status` (`pending|approved|rejected|disabled`), `approved_at`,
         `approved_by`, `notes`.
@@ -630,10 +652,10 @@ unless there is a reason to revisit, and record the reason here if so.
       for sending, `APP_KEY` warning for encrypted credentials, and the credit
       reconciliation runbook.
 
-**Suggested order:** ~~8.0 (decisions)~~ → ~~8.1 (package)~~ → **8.2 (next —
-schema)** → 8.3 → 8.4 → 8.5 → 8.6 → 8.7 → 8.10 → 8.14 → 8.15 → 8.17 → 8.8 →
-8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 → 8.22–8.26 continuously,
-not at the end.
+**Suggested order:** ~~8.0 (decisions)~~ → ~~8.1 (package)~~ → ~~8.2 (schema)~~ →
+**8.3 (next — driver contract + Beem)** → 8.4 → 8.5 → 8.6 → 8.7 → 8.10 → 8.14 →
+8.15 → 8.17 → 8.8 → 8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 →
+8.22–8.26 continuously, not at the end.
 Rationale: foundation first, then the narrowest useful slice (**one tenant sends
 one SMS through the Log driver and sees it logged**), then platform credits so
 platform mode works at all, then bulk, then automation. 8.22–8.26 (isolation,

@@ -21,6 +21,12 @@ class TenantTables
         'persons',
         'products',
         'quotes',
+        'sms_batches',
+        'sms_credit_ledger',
+        'sms_credit_requests',
+        'sms_messages',
+        'sms_opt_outs',
+        'sms_sender_profiles',
         'tags',
         'users',
         'warehouses',
@@ -42,5 +48,20 @@ class TenantTables
         'lead_sources',
         'lead_types',
         'roles',
+        'sms_templates',
+    ];
+
+    /**
+     * Tables with no tenant_id at all, read only by platform admins.
+     *
+     * sms_webhook_events is deliberately not in either list above: a provider
+     * callback arrives before any tenant context exists, and is attributed to
+     * a tenant only once its message_id resolves. Listing it as SHARED would
+     * expose every tenant's callbacks to every other tenant.
+     *
+     * @var array
+     */
+    public const PLATFORM_ONLY = [
+        'sms_webhook_events',
     ];
 }

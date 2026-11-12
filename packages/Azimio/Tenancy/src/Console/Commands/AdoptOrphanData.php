@@ -25,6 +25,16 @@ class AdoptOrphanData extends Command
      */
     protected $description = 'Assign all orphan (NULL tenant_id) business data to a tenant — for migrating a pre-tenancy installation';
 
+    /**
+     * Strict tables that are skipped entirely, because a NULL tenant_id row
+     * in them is platform-owned rather than orphaned.
+     *
+     * @var string[]
+     */
+    private const NEVER_ADOPT = [
+        'sms_sender_profiles',
+    ];
+
     public function handle(): int
     {
         $key = $this->argument('tenant');
@@ -46,6 +56,15 @@ class AdoptOrphanData extends Command
         // Strict business tables only: NULL rows in shared tables (pipelines,
         // roles, attributes, ...) are platform defaults and must stay NULL.
         foreach (TenantTables::STRICT as $table) {
+            // Strict tables whose NULL rows are still platform-owned, so a
+            // NULL tenant_id there is never an orphan. sms_sender_profiles
+            // holds the platform AZIMIOCRM profile (and its encrypted
+            // provider credentials) as its NULL row; adopting it would hand
+            // the platform's own sending identity to one tenant.
+            if (in_array($table, self::NEVER_ADOPT, true)) {
+                continue;
+            }
+
             $query = DB::table($table)->whereNull('tenant_id');
 
             // Platform super admins keep their NULL tenant_id.
