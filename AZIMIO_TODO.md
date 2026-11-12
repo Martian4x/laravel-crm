@@ -427,9 +427,10 @@ unless there is a reason to revisit, and record the reason here if so.
       `src/Routes/` (`admin.php`, `super.php`, `webhook.php`) instead of inline
       in the provider, because this module has three different middleware
       stacks — tenant admin `['web','user','tenant','admin_locale']`, super
-      admin `['web','user','super_admin','admin_locale']`, and public
-      signature-verified webhooks with no session. Each file is a stub naming
-      the items that populate it.
+      admin `['web','user','super_admin','admin_locale']`, and public webhooks
+      with no session. Each file is a stub naming the items that populate it.
+      (The webhook stub originally promised signature verification; 8.3 found
+      Beem documents no such mechanism — see the rewritten 8.19.)
       en/sw lang stubs already carry the two distinct 8.0.6 failure strings
       (`retry-via-platform` vs `no-platform-credits`). `.env.example` documents
       the new keys with `AZIMIO_SMS_DRIVER=log` as the dev default.
@@ -502,16 +503,44 @@ unless there is a reason to revisit, and record the reason here if so.
       - `tenants` additions: `sms_credits` (cached balance, default 0),
         `sms_mode` (`platform|own`, default `platform`),
         `sms_low_credit_threshold` (default 50).
-- [ ] 8.3 **Driver contract + Beem driver.** `Azimio\Messaging\Contracts\SmsDriver`:
-      `send(OutboundMessage): SendResult`, `sendBulk(array): array`,
-      `balance(): ?Balance`, `senderNames(): array`. `BeemDriver` wraps Beem's
-      HTTP API (Basic auth with api key + secret, batched recipients per request,
-      `source_addr` = sender name, `schedule_time` for scheduled sends);
-      **verify every endpoint, field name and error code against the current Beem
-      Africa docs while implementing — do not trust remembered shapes.** Also
-      `LogDriver` (writes to the log, charges no credits) as the local-dev and
-      test default, and an `AfricasTalkingDriver` stub with the contract filled in
-      but `send()` throwing `NotImplemented`.
+- [x] 8.3 **Driver contract + Beem driver.** `SmsDriver` with `send()`,
+      `balance()`, `senderNames()`, `deliveryReports()`, `maxRecipientsPerCall()`,
+      `name()`; value objects `OutboundMessage`, `Recipient`, `SendResult`,
+      `Balance`, `DeliveryReport`; `SendFailure` enum; `LogDriver`, `BeemDriver`,
+      `AfricasTalkingDriver` stub; `DriverManager`. 16 tests.
+      **Beem API verified against docs.beem.africa on 2026-11-12** (their
+      OpenAPI spec + guides). All four endpoint URLs in the config were
+      correct. What the docs changed:
+      - `dest_addr` takes **no leading `+` and no leading zero** (`255712000001`).
+        Our schema stores E.164, so the driver converts on the way out.
+      - `encoding` is an **integer** (0 = default GSM), not our internal string.
+      - Success is **body code 100**, not merely HTTP 200 — a 200 with code 111
+        is a failure. Tested explicitly.
+      - A send returns **one `request_id` for the whole call and no
+        per-recipient message id**, so delivery status is looked up by
+        `(request_id, dest_addr)`. `request_id` is a string in their schema but
+        an integer in their own example, so both are accepted.
+      - Max **1000 recipients** per request (their error code 114).
+      - Their 23 documented body codes are mapped onto `SendFailure`; code 102
+        (insufficient balance) is what drives the 8.0.6 branch, and **103 is the
+        only transient one** — an invalid number or unregistered sender will
+        fail identically forever, so retrying is pointless.
+      **Deliberate design points:** `send()` never throws for a provider
+      refusal (it returns a failed `SendResult`, because the pipeline must
+      record it and release the reservation per 8.0.2) — throwing is reserved
+      for programmer error like missing credentials, which is tested. There is
+      **no separate bulk method**: Beem takes one body plus a recipients array,
+      so a single send is just one recipient, and chunking is
+      `OutboundMessage::chunk()`. A **transport failure is never auto-retried**:
+      Beem documents no idempotency key, so a dropped POST is ambiguous and a
+      retry risks charging and delivering twice. Drivers are **not singletons** —
+      each carries one profile's credentials, so a shared instance would send
+      through another tenant's account.
+      **Still undocumented by Beem, deliberately not guessed:** how they count
+      segments or charge for long/Unicode messages on `/v1/send`. Our GSM-7
+      160/153 figures come from their *Multicountry* product, a different API.
+      **Charges must be reconciled against real Beem invoices before anyone
+      bills on them** — this is the weakest assumption under 8.0.1.
 - [ ] 8.4 **Phone normalization + segment counting** (`PhoneNormalizer`,
       `SegmentCounter`). Normalize `07XXXXXXXX` / `+255…` / `255…` / `0255…` /
       spaces and dashes to E.164 `+255XXXXXXXXX`; reject numbers that cannot be
@@ -606,13 +635,36 @@ unless there is a reason to revisit, and record the reason here if so.
 
 ### D. Integrations & automation
 
-- [ ] 8.19 **Delivery reports + inbound.** Signed webhook endpoints for the Beem
-      delivery-report callback (updates `sms_messages.status`/`delivered_at`,
-      logging every payload to `sms_webhook_events`) and for inbound/two-way SMS
-      (logs the message, auto-handles `STOP`/`ACHA` opt-outs, attaches to the
-      matching person by number). Route is public + signature-verified +
-      rate-limited, and resolves tenant from the sender profile, not from the
-      request body. A polling fallback command for providers without callbacks.
+- [ ] 8.19 **Delivery reports + inbound.** **REWRITTEN after reading Beem's docs
+      in 8.3 — the original plan here was wrong.** It assumed a *signed
+      delivery-report webhook*. Beem has neither:
+      - **Delivery reports are POLLING ONLY.** Beem's REST SMS API has no
+        delivery callback at all. Status comes from
+        `GET /public/v1/delivery-reports?request_id=&dest_addr=`, **one request
+        per recipient**, and their docs ask for a five-minute wait after
+        submitting. So this is a **scheduled console command**, not a route:
+        walk non-terminal messages older than the minimum age, poll per
+        `(request_id, dest_addr)`, write `delivered_at`/`status`, and leave
+        `PENDING` alone for the next pass. `BeemDriver::deliveryReports()`
+        already does the fetching and status mapping. Mind the request cost:
+        a 10,000-recipient batch is 10,000 polls, so batch size and backoff
+        matter, and messages must stop being polled after
+        `delivery_reports.max_age_hours`.
+      - **Inbound/two-way IS a callback, but there is no signature scheme.**
+        It is a separate Beem product needing a two-way number, and their
+        security page offers only an unspecified "optionally validate the API
+        key" — no HMAC, no documented header, no IP allowlist. **So an inbound
+        callback cannot be authenticated as genuinely from Beem.** The route is
+        therefore **disabled by default** (`messaging.webhooks.enabled = false`);
+        enabling it means an unguessable path, HTTPS, and whatever network
+        restriction the deployment can manage. Treat every payload as
+        untrusted: log it to `sms_webhook_events` (including rejected ones —
+        a run of them is what an attack looks like), process idempotently by
+        `transaction_id`, resolve tenant from the sender profile that owns the
+        number and never from the request body, and reply
+        `{"transaction_id": "...", "successful": true}` as Beem expects.
+        **Ask Beem directly for a real verification method before enabling
+        this in production.**
 - [ ] 8.20 **Notification channel + workflow action** — *this is the original 5.3.*
       A Laravel `sms` notification channel so existing notifications can ride SMS,
       wired to: lead assigned, activity reminder due, quote sent. Plus a
@@ -652,8 +704,9 @@ unless there is a reason to revisit, and record the reason here if so.
       for sending, `APP_KEY` warning for encrypted credentials, and the credit
       reconciliation runbook.
 
-**Suggested order:** ~~8.0 (decisions)~~ → ~~8.1 (package)~~ → ~~8.2 (schema)~~ →
-**8.3 (next — driver contract + Beem)** → 8.4 → 8.5 → 8.6 → 8.7 → 8.10 → 8.14 →
+**Suggested order:** ~~8.0~~ → ~~8.1~~ → ~~8.2~~ → ~~8.3 (drivers)~~ →
+**8.4 (next — phone normalization + segment counting)** → 8.5 → 8.6 → 8.7 →
+8.10 → 8.14 →
 8.15 → 8.17 → 8.8 → 8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 →
 8.22–8.26 continuously, not at the end.
 Rationale: foundation first, then the narrowest useful slice (**one tenant sends

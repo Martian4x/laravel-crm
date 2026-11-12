@@ -35,9 +35,15 @@ return [
     | The credentials below are the platform's own AZIMIOCRM account, used
     | for platform-mode sends.
     |
-    | NOTE: every Beem endpoint, field name and error code must be verified
-    | against the current Beem Africa documentation during 8.3. The URLs
-    | below are placeholders to be confirmed, not trusted values.
+    | VERIFIED against docs.beem.africa on 2026-11-12 (their OpenAPI spec at
+    | /openapi/sms.json plus the SMS guides). All four Beem URLs below are
+    | confirmed, as is HTTP Basic auth with the api key as username.
+    |
+    | Still NOT documented by Beem, and therefore not assumed anywhere in
+    | this module: how they count segments or charge for long and Unicode
+    | messages on /v1/send. Our GSM-7 figures below come from their
+    | Multicountry product, a different API. Charges must be reconciled
+    | against real invoices before anyone bills on them (see 8.0.1).
     |
     */
     'drivers' => [
@@ -56,8 +62,20 @@ return [
                 'delivery_reports' => env('BEEM_DLR_URL', 'https://dlrapi.beem.africa/public/v1/delivery-reports'),
                 'sender_names'     => env('BEEM_SENDER_NAMES_URL', 'https://apisms.beem.africa/public/v1/sender-names'),
             ],
-            'timeout'            => (int) env('BEEM_TIMEOUT', 15),
+            'timeout'             => (int) env('BEEM_TIMEOUT', 15),
+
+            // Beem documents a hard maximum of 1000 recipients per request
+            // (their error code 114). 500 is a deliberately conservative
+            // default; BeemDriver clamps anything above 1000 regardless.
             'recipients_per_call' => (int) env('BEEM_RECIPIENTS_PER_CALL', 500),
+
+            // Beem's encoding field is an INTEGER, and 0 ("default GSM") is
+            // the only value their /v1/send reference documents.
+            'encoding'            => (int) env('BEEM_ENCODING', 0),
+
+            // Their docs ask callers to wait at least five minutes after
+            // submitting before checking delivery status.
+            'dlr_min_age_minutes' => (int) env('BEEM_DLR_MIN_AGE', 5),
         ],
 
         'africastalking' => [
@@ -176,18 +194,43 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Webhooks (8.19)
+    | Delivery reports (8.19)
     |--------------------------------------------------------------------------
     |
-    | Delivery-report and inbound callbacks are public routes, so they are
-    | signature-verified and rate-limited. Tenant context is resolved from
-    | the sender profile the message was sent under — never from the request
-    | body, which an attacker controls.
+    | CORRECTION to the original 8.19 plan, from reading Beem's docs: their
+    | REST SMS API has NO delivery-report callback. Status is obtained by
+    | POLLING GET /public/v1/delivery-reports with (request_id, dest_addr),
+    | one request per recipient, and they ask for a five-minute wait after
+    | submitting. So delivery reporting is a scheduled command, not a
+    | webhook, and no signature question arises for it at all.
+    |
+    */
+    'delivery_reports' => [
+        'enabled'        => (bool) env('AZIMIO_SMS_DLR_POLL', true),
+        'batch_size'     => (int) env('AZIMIO_SMS_DLR_BATCH', 200),
+        'max_age_hours'  => (int) env('AZIMIO_SMS_DLR_MAX_AGE', 48),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Inbound webhooks (8.19)
+    |--------------------------------------------------------------------------
+    |
+    | Inbound/two-way SMS IS a callback, but it is a separate Beem product
+    | needing a two-way number, and their docs define NO signature or HMAC
+    | scheme for it — only an optional, unspecified "validate the API key".
+    | Treat an inbound callback as untrusted input: it may not be from Beem.
+    |
+    | Until Beem documents a real verification method, the route is kept
+    | DISABLED by default, and enabling it should mean an unguessable path
+    | plus whatever network restriction the deployment can manage. Tenant
+    | context is resolved from the sender profile the number belongs to,
+    | never from the request body.
     |
     */
     'webhooks' => [
-        'enabled'            => (bool) env('AZIMIO_SMS_WEBHOOKS', true),
-        'signing_secret'     => env('AZIMIO_SMS_WEBHOOK_SECRET'),
+        'enabled'            => (bool) env('AZIMIO_SMS_WEBHOOKS', false),
+        'shared_secret'      => env('AZIMIO_SMS_WEBHOOK_SECRET'),
         'rate_limit'         => env('AZIMIO_SMS_WEBHOOK_RATE', '120,1'),
         'retain_events_days' => (int) env('AZIMIO_SMS_EVENT_RETENTION', 90),
     ],

@@ -2,6 +2,7 @@
 
 namespace Azimio\Messaging\Providers;
 
+use Azimio\Messaging\DriverManager;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -28,6 +29,13 @@ class MessagingServiceProvider extends ServiceProvider
             __DIR__.'/../Config/messaging.php',
             'messaging'
         );
+
+        /**
+         * The manager is a singleton; the drivers it builds are not. Each
+         * driver instance carries one sender profile's credentials, so
+         * sharing one across tenants would send through the wrong account.
+         */
+        $this->app->singleton(DriverManager::class);
     }
 
     /**
