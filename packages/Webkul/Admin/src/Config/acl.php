@@ -547,4 +547,26 @@ return [
         'route' => 'admin.configuration.index',
         'sort'  => 9,
     ],
+
+    /**
+     * Messaging (Azimio Phase 8). Split so a tenant can let an agent send a
+     * single SMS without also granting bulk sends or access to the
+     * provider credentials in settings.
+     */
+    [
+        'key'   => 'sms',
+        'name'  => 'messaging::app.acl.sms',
+        'route' => 'admin.sms.settings.index',
+        'sort'  => 10,
+    ], [
+        'key'   => 'sms.settings',
+        'name'  => 'messaging::app.acl.settings',
+        'route' => [
+            'admin.sms.settings.index',
+            'admin.sms.settings.store',
+            'admin.sms.settings.platform',
+            'admin.sms.settings.test',
+        ],
+        'sort'  => 1,
+    ],
 ];

@@ -287,4 +287,22 @@ return [
         'sort'       => 9,
         'icon-class' => 'icon-configuration',
     ],
+
+    /**
+     * Messaging (Azimio Phase 8). Sub-items for compose, bulk, templates,
+     * the log and opt-outs arrive with 8.7 to 8.11.
+     */
+    [
+        'key'        => 'sms',
+        'name'       => 'messaging::app.name',
+        'route'      => 'admin.sms.settings.index',
+        'sort'       => 10,
+        'icon-class' => 'icon-mail',
+    ], [
+        'key'        => 'sms.settings',
+        'name'       => 'messaging::app.sms.settings.title',
+        'route'      => 'admin.sms.settings.index',
+        'sort'       => 1,
+        'icon-class' => 'icon-settings',
+    ],
 ];

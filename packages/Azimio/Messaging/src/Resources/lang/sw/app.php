@@ -3,8 +3,51 @@
 return [
     'name' => 'Ujumbe',
 
+    'acl' => [
+        'sms'      => 'Ujumbe',
+        'settings' => 'Mipangilio ya SMS',
+    ],
+
     'sms' => [
         'title' => 'SMS',
+
+        'settings' => [
+            'title'          => 'Mipangilio ya SMS',
+            'platform-title' => 'Salio la jukwaa',
+            'platform-help'  => 'Tuma kwa kutumia jina la AzimioCustomers na salio ulilopewa kampuni yako. Hakuna cha kusanidi.',
+            'own-title'      => 'Mtoa huduma wako wa SMS',
+            'own-help'       => 'Tuma kwa kutumia akaunti na salio lako mwenyewe. Salio la jukwaa halitumiki kabisa.',
+            'own-label'      => 'Mtoa huduma wako',
+
+            'sender-name'      => 'Jina la mtumaji',
+            'sender-name-help' => 'Hadi herufi 11. Lazima liwe tayari limesajiliwa na linafanya kazi kwenye akaunti yako.',
+            'provider'         => 'Mtoa huduma',
+            'api-key'          => 'Ufunguo wa API',
+            'secret-key'       => 'Siri ya API',
+            'credit-balance'   => 'Salio la SMS',
+            'provider-balance' => 'Salio kwa mtoa huduma wako',
+
+            'currently-active' => 'Inatumika sasa',
+            'use-platform'     => 'Badilisha kwenda salio la jukwaa',
+            'save-and-verify'  => 'Hifadhi na thibitisha',
+            'verify-note'      => 'Taarifa zako zitahakikiwa kwa mtoa huduma kabla hazijaanza kutumika, ili kosa dogo lisisababishe ujumbe kushindwa kimyakimya.',
+
+            'low-balance' => 'Salio lako la SMS linakaribia kuisha. Omba salio zaidi kabla ya kampeni yako ijayo.',
+
+            'test-title' => 'Tuma ujumbe wa majaribio',
+            'test-help'  => 'Hutuma SMS moja kwa njia inayotumika hapo juu, ili uhakikishe inafika.',
+            'send-test'  => 'Tuma jaribio',
+            'test-body'  => 'Ujumbe wa majaribio kutoka :tenant kupitia AzimioCustomers.',
+
+            'own-activated'      => 'Mtoa huduma wako amethibitishwa na sasa anatumika.',
+            'platform-activated' => 'Sasa unatuma kwa kutumia salio la jukwaa.',
+            'test-queued'        => 'Ujumbe wa majaribio umepangwa kwenda :number.',
+            'test-failed'        => 'Ujumbe wa majaribio haukuweza kupangwa.',
+            'no-profile'         => 'Hakuna njia ya kutuma iliyosanidiwa bado.',
+
+            'credentials-rejected'  => 'Mtoa huduma wako amekataa taarifa hizi. Hakiki ufunguo na siri ya API kisha jaribu tena.',
+            'sender-not-on-account' => 'Jina la mtumaji ":sender" halitumiki kwenye akaunti yako. Majina yaliyosajiliwa: :names',
+        ],
 
         'modes' => [
             'platform' => 'Salio la jukwaa (AZIMIOCRM)',

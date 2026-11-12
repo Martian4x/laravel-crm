@@ -1,0 +1,172 @@
+<?php
+
+use Azimio\Messaging\Enums\SenderProfileStatus;
+use Azimio\Messaging\Models\Batch;
+use Azimio\Messaging\Models\CreditLedgerEntry;
+use Azimio\Messaging\Models\Message;
+use Azimio\Messaging\Models\SenderProfile;
+use Azimio\Messaging\Services\CreditLedger;
+use Azimio\Tenancy\Models\Tenant;
+use Webkul\User\Models\User;
+
+/**
+ * Phase 8.6 — Settings -> SMS.
+ *
+ * Beyond "does it render", the tests that matter are that a tenant cannot
+ * activate a provider that does not work, and that an API secret never
+ * reaches the page.
+ */
+function smsAdmin(): User
+{
+    return User::withoutTenancy()->where('email', 'admin@twiga-traders.test')->firstOrFail();
+}
+
+function smsTenant(): Tenant
+{
+    return Tenant::withoutGlobalScopes()->where('slug', 'twiga-traders')->firstOrFail();
+}
+
+function makePlatformProfile(): SenderProfile
+{
+    return SenderProfile::withoutTenancy()->firstOrCreate(
+        ['tenant_id' => null, 'sender_name' => 'AZIMIOTESTPLAT'],
+        ['label' => 'Platform', 'driver' => 'log', 'status' => 'approved'],
+    );
+}
+
+function saveOwnProvider(string $sender, string $key = 'key', string $secret = 'secret')
+{
+    return test()->actingAs(smsAdmin())->post(route('admin.sms.settings.store'), [
+        'driver'      => 'log',
+        'sender_name' => $sender,
+        'api_key'     => $key,
+        'secret_key'  => $secret,
+    ]);
+}
+
+afterEach(function () {
+    $tenant = smsTenant();
+
+    foreach ([Message::class, Batch::class, CreditLedgerEntry::class] as $model) {
+        $model::withoutTenancy()->where('tenant_id', $tenant->id)->forceDelete();
+    }
+
+    SenderProfile::withoutTenancy()->where('tenant_id', $tenant->id)->forceDelete();
+    SenderProfile::withoutTenancy()->whereNull('tenant_id')
+        ->where('sender_name', 'AZIMIOTESTPLAT')->forceDelete();
+
+    Tenant::withoutGlobalScopes()->whereKey($tenant->id)
+        ->update(['sms_mode' => 'platform', 'sms_credits' => 0]);
+});
+
+it('renders the settings page for a tenant admin', function () {
+    test()->actingAs(smsAdmin())
+        ->get(route('admin.sms.settings.index'))
+        ->assertOK()
+        ->assertSee('AZIMIOCRM')
+        ->assertSee(trans('messaging::app.sms.settings.own-title'));
+});
+
+it('shows the platform credit balance', function () {
+    app(CreditLedger::class)->allocate(smsTenant(), 250);
+
+    test()->actingAs(smsAdmin())
+        ->get(route('admin.sms.settings.index'))
+        ->assertOK()
+        ->assertSee('250');
+});
+
+it('warns when the credit balance is low', function () {
+    app(CreditLedger::class)->allocate(smsTenant(), 5);
+
+    test()->actingAs(smsAdmin())
+        ->get(route('admin.sms.settings.index'))
+        ->assertOK()
+        ->assertSee(trans('messaging::app.sms.settings.low-balance'));
+});
+
+it('activates an own provider whose credentials verify', function () {
+    saveOwnProvider(config('messaging.platform.sender_name'))
+        ->assertRedirect(route('admin.sms.settings.index'))
+        ->assertSessionHas('success');
+
+    $profile = SenderProfile::withoutTenancy()->where('tenant_id', smsTenant()->id)->first();
+
+    expect($profile->status)->toBe(SenderProfileStatus::Approved)
+        ->and(smsTenant()->fresh()->sms_mode)->toBe('own');
+});
+
+it('refuses to activate a sender name the provider does not know', function () {
+    // An unregistered sender ID fails every send, so it must not be
+    // possible to switch into that state.
+    saveOwnProvider('NOTREAL')
+        ->assertRedirect(route('admin.sms.settings.index'))
+        ->assertSessionHas('error');
+
+    $profile = SenderProfile::withoutTenancy()->where('tenant_id', smsTenant()->id)->first();
+
+    expect($profile->status)->toBe(SenderProfileStatus::Pending)
+        ->and(smsTenant()->fresh()->sms_mode)->toBe('platform');
+});
+
+it('never renders stored credentials back to the page', function () {
+    saveOwnProvider(config('messaging.platform.sender_name'), 'super-secret-key', 'super-secret-secret');
+
+    test()->actingAs(smsAdmin())
+        ->get(route('admin.sms.settings.index'))
+        ->assertOK()
+        ->assertDontSee('super-secret-key')
+        ->assertDontSee('super-secret-secret');
+});
+
+it('switches back to platform mode in one click and keeps the credentials', function () {
+    saveOwnProvider(config('messaging.platform.sender_name'));
+
+    expect(smsTenant()->fresh()->sms_mode)->toBe('own');
+
+    test()->actingAs(smsAdmin())
+        ->post(route('admin.sms.settings.platform'))
+        ->assertRedirect(route('admin.sms.settings.index'));
+
+    $profile = SenderProfile::withoutTenancy()->where('tenant_id', smsTenant()->id)->first();
+
+    expect(smsTenant()->fresh()->sms_mode)->toBe('platform')
+        // Switching back must not mean retyping an API secret.
+        ->and($profile)->not->toBeNull()
+        ->and($profile->credentials['api_key'])->toBe('key');
+});
+
+it('rejects an invalid test number with a reason', function () {
+    test()->actingAs(smsAdmin())
+        ->post(route('admin.sms.settings.test'), ['test_number' => '0222110000'])
+        ->assertRedirect(route('admin.sms.settings.index'))
+        ->assertSessionHas('error', trans('messaging::app.sms.phone.not-mobile'));
+});
+
+it('refuses a platform test send when there are no credits', function () {
+    makePlatformProfile();
+
+    test()->actingAs(smsAdmin())
+        ->post(route('admin.sms.settings.test'), ['test_number' => '0712345678'])
+        ->assertRedirect(route('admin.sms.settings.index'))
+        ->assertSessionHas('error');
+
+    expect(Message::withoutTenancy()->where('tenant_id', smsTenant()->id)->count())->toBe(0);
+});
+
+it('queues a platform test send when credits are available', function () {
+    makePlatformProfile();
+
+    app(CreditLedger::class)->allocate(smsTenant(), 50);
+
+    test()->actingAs(smsAdmin())
+        ->post(route('admin.sms.settings.test'), ['test_number' => '0712345678'])
+        ->assertRedirect(route('admin.sms.settings.index'))
+        ->assertSessionHas('success');
+
+    expect(Message::withoutTenancy()->where('tenant_id', smsTenant()->id)->count())->toBe(1);
+});
+
+it('does not serve the settings page to a guest', function () {
+    test()->get(route('admin.sms.settings.index'))->assertRedirect();
+});

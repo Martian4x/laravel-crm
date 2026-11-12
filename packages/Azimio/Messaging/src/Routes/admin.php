@@ -1,18 +1,29 @@
 <?php
 
+use Azimio\Messaging\Http\Controllers\Admin\SmsSettingsController;
+use Illuminate\Support\Facades\Route;
+
 /**
  * Tenant-facing SMS routes.
  *
  * Mounted by MessagingServiceProvider under the admin path with
  * ['web', 'user', 'tenant', 'admin_locale'] — tenant context is already
- * established before any route here runs.
+ * established before any route here runs, and the 'user' middleware
+ * applies the ACL keys declared in Admin's acl.php.
  *
- * Populated by Phase 8 items:
- *   8.6  settings (own provider setup / platform mode)
- *   8.7  compose + send single
- *   8.8  bulk send
- *   8.9  templates CRUD
- *   8.10 message log + batch history
- *   8.11 opt-out management
- *   8.13 credit request + balance
+ * Remaining items: 8.7 compose, 8.8 bulk, 8.9 templates, 8.10 log,
+ * 8.11 opt-outs, 8.13 credit requests.
  */
+Route::prefix('sms')->group(function () {
+    Route::get('settings', [SmsSettingsController::class, 'index'])
+        ->name('admin.sms.settings.index');
+
+    Route::post('settings', [SmsSettingsController::class, 'store'])
+        ->name('admin.sms.settings.store');
+
+    Route::post('settings/platform', [SmsSettingsController::class, 'usePlatform'])
+        ->name('admin.sms.settings.platform');
+
+    Route::post('settings/test', [SmsSettingsController::class, 'test'])
+        ->name('admin.sms.settings.test');
+});

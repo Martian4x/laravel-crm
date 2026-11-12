@@ -642,7 +642,24 @@ unless there is a reason to revisit, and record the reason here if so.
 
 ### B. Tenant-facing module
 
-- [ ] 8.6 **SMS settings page** (Settings → SMS). Shows the active mode and lets
+- [x] 8.6 **SMS settings page** — **DONE.** `SmsSettingsController`,
+      `messaging::admin.settings`, four routes, `sms` + `sms.settings` ACL keys
+      and a Messaging menu entry (partial 8.23), en/sw. 11 tests.
+      **Verification replaces trust:** a submitted profile is saved as
+      `pending`, then the credentials are used to call the provider. Where the
+      driver can list sender names, the submitted one is checked against the
+      account — an unregistered sender ID is rejected on *every* send, so
+      finding out at setup beats finding out mid-campaign. Only if that passes
+      does the profile become `approved` and the tenant switch to own mode. A
+      failed verification leaves them on platform mode, tested.
+      **Switching back to platform keeps the credentials** rather than deleting
+      them: a tenant toggling back should not have to retype an API secret they
+      may no longer have. Tested.
+      **A test asserts the API key and secret never appear in the page HTML**
+      (they are encrypted at rest and in `$hidden`, but the form must not echo
+      them back either).
+      The log driver is only offered as a provider outside production.
+      **This undermines the premise of 8.17 — see the note there.**
       the tenant admin **set up their own provider**: driver, sender name, API
       key/secret, with a **"Send test SMS"** button that must pass before the
       profile is saved as active. Shows their provider balance when the driver
@@ -699,10 +716,28 @@ unless there is a reason to revisit, and record the reason here if so.
 - [ ] 8.16 **Credit request queue.** Review pending requests: approve in full,
       approve partially, or reject with a note — approval writes the allocation
       ledger entry in the same transaction and notifies the tenant.
-- [ ] 8.17 **Sender-name approval.** Tenant-submitted sender names land as
-      `pending`; platform admin approves/rejects with a note (a sender name must be
-      registered with the operator before it will deliver). A `pending` profile
-      cannot send.
+- [ ] 8.17 **Sender-name approval.** ⚠️ **NEEDS A DECISION — 8.6 undercut the
+      premise.** The original reasoning was "a sender name must be registered
+      with the operator before it will deliver, so a platform admin should
+      approve it." But for a tenant on their **own** provider, the sender name
+      is registered on *their* account, with *their* operator relationship. The
+      platform is not party to it, so a human approving it here asserts nothing
+      — and 8.6 already does something strictly better: it queries the tenant's
+      own provider for the sender names on the account and refuses to activate
+      one that is not there. Automatic, immediate, and actually verified.
+      That leaves a real question:
+      - **If platform mode only ever sends as the fixed `AZIMIOCRM` name**
+        (which is what the Phase 8 goal table says), then there is nothing left
+        for this approval queue to approve, and 8.17 should be **dropped**,
+        with the platform's own sender-ID registration handled once in 8.14.
+      - **If tenants may request custom sender names on the platform account**,
+        then 8.17 is needed in full — because then *we* carry the operator
+        relationship and the registration cost, and a human must decide. That
+        is a product decision, not a technical one: it also implies per-tenant
+        sender-ID fees and a registration workflow with the operator.
+      The `status` column, the `canSend()` gate and the pending state all exist
+      and are used either way, so nothing is wasted by deciding this later —
+      but **decide before building a queue nobody needs.**
 - [ ] 8.18 **Platform oversight**: cross-tenant message log (read-only, filterable
       by tenant/status/date), usage and spend per tenant per month, top senders,
       failure-rate alerting, and a global **kill switch** to pause all platform-mode
@@ -780,7 +815,7 @@ unless there is a reason to revisit, and record the reason here if so.
       reconciliation runbook.
 
 **Suggested order:** ~~8.0~~ → ~~8.1~~ → ~~8.2~~ → ~~8.3 (drivers)~~ →
-~~8.4~~ → ~~8.5 (pipeline)~~ → **8.6 (next — tenant SMS settings)** → 8.7 →
+~~8.4~~ → ~~8.5~~ → ~~8.6 (settings page)~~ → **8.7 (next — compose single SMS)** →
 8.10 → 8.14 →
 8.15 → 8.17 → 8.8 → 8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 →
 8.22–8.26 continuously, not at the end.
