@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\ServiceProvider;
 use Konekt\Concord\ConcordServiceProvider;
 use Prettus\Repository\Providers\RepositoryServiceProvider;
+use Azimio\Messaging\Providers\MessagingServiceProvider;
 use Azimio\Tenancy\Providers\TenancyServiceProvider;
 use Webkul\Activity\Providers\ActivityServiceProvider;
 use Webkul\Admin\Providers\AdminServiceProvider;
@@ -245,6 +246,7 @@ return [
          * Azimio Service Providers...
          */
         TenancyServiceProvider::class,
+        MessagingServiceProvider::class,
     ])->toArray(),
 
     /*

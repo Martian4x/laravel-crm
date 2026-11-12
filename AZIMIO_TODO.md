@@ -184,10 +184,10 @@ Work through the phases in order — each item is scoped to be done (and tested)
       local 0-prefixed numbers auto-convert to +255 international format.
       **Later: WhatsApp Business Cloud API (template sends, conversation logging)
       — needs a Meta business account.**
-- [ ] 5.3 **SMS notifications** via local gateways (Beem Africa, Africa's Talking):
-      lead assignment alerts, activity reminders, quote sent.
-      **Blocked on choosing a gateway + credentials; then implement as a Laravel
-      notification channel + workflow action.**
+- [→] 5.3 **SMS notifications** via local gateways — **superseded by Phase 8**, which
+      grew this from "notification channel" into a full Text Messaging module.
+      Gateway decided: **Beem Africa first**. The original scope (lead assignment
+      alerts, activity reminders, quote sent) is now Phase 8 item 8.14.
 - [x] 5.4 **Mobile-money on quotes**: new shared attributes `payment_method`
       (M-Pesa, Tigo Pesa, Airtel Money, Halopesa, T-Pesa, Bank Transfer, Cash) and
       `payment_reference` (TxID) — appear automatically in quote create/edit forms
@@ -308,6 +308,15 @@ scoped to be done one by one, in the suggested order at the end.
       linked from the super-admin dropdown. en/sw. Tests in
       `SuperAdminUserPanelTest`. **Note: super-panel user creation is not subject
       to the tenant `max_users` cap — super admins manage plans.**
+      **Bug fixed 2026-11-12:** `UserController::store()` and `update()` read
+      `$validated['locale']` with `?:`, which needs the key to exist. `locale` is
+      `nullable`, so Laravel omits it from the validated array whenever the
+      request does not send it — any create/update without that field returned a
+      500. Now `($validated['locale'] ?? null) ?: null`, which both survives the
+      missing key and keeps the original coercion of an empty string to NULL.
+      Three regression tests added (create without locale, update without
+      locale, empty string clears to NULL); the first two were verified to fail
+      against the unfixed controller.
 
 ### D. Lifecycle & offboarding
 
@@ -326,8 +335,319 @@ before opening it up), then lifecycle.
 
 ---
 
+## Phase 8 — Text Messaging (SMS) Module  ⚡ **CURRENT PRIORITY**
+
+Added 2026-11-12. Supersedes the one-line 5.3 placeholder.
+
+### Goal
+
+A complete, tenant-aware SMS module with **two independent sending modes**:
+
+| Mode | Sender name | Credits consumed | Who sets it up |
+|---|---|---|---|
+| **Own provider** (BYO) | tenant's own registered sender name | tenant's own balance at their provider — **platform credits never touched** | the tenant, in CRM settings |
+| **Platform** (default) | `AZIMIOCRM` | platform SMS credits allocated to that tenant | platform admin allocates; tenant just sends |
+
+A tenant with no provider of their own falls back to platform mode, where they can
+**request credits** and a platform admin **approves/allocates** them. Platform admins
+get a module with full control over providers, sender names, credit allocation, usage
+and audit across every tenant. Both modes share one sending pipeline, one message log
+and one reporting surface, so the tenant UI is identical either way.
+
+First provider driver: **Beem Africa**. The module is driver-based so Africa's
+Talking (and others) drop in later without touching call sites.
+
+### Decisions — **CONFIRMED 2026-11-12**
+
+These six are settled. They are the contract the schema and the sending pipeline
+are built against; changing one later means a migration, so treat them as fixed
+unless there is a reason to revisit, and record the reason here if so.
+
+- [x] 8.0.1 **Credit unit = one SMS *segment*.** Not one message, not one
+      recipient. A 320-character message to 10 people costs 20 credits.
+      Rationale: it is exactly how Beem bills us, so the ledger can never drift
+      from real cost. Consequence: every send surface must show the live segment
+      count *before* confirmation (8.7, 8.8) — a tenant must never be surprised
+      by a 3x charge for a long message.
+- [x] 8.0.2 **Platform-mode refunds: pre-submission only.** Credits are debited
+      when the provider *accepts* the message, and refunded **only** if the
+      provider rejects it before it reaches the network. A message that was
+      submitted and then never delivered is **not** refunded — the operator
+      already charged us. Failures caught before submission (invalid number,
+      opt-out, quiet hours, insufficient credits) never debit at all, so there is
+      nothing to refund. Consequence: the debit happens in the driver's
+      post-submit callback, not at enqueue time; reserve-then-settle, never
+      debit-then-hope.
+- [x] 8.0.3 **Credit purchase is recorded manually.** Payment happens outside the
+      CRM (mobile money / bank, consistent with 5.9), and a platform admin records
+      the resulting allocation against the tenant. No payment gateway in this
+      phase; auto-purchase is parked in 8.21.
+- [x] 8.0.4 **One active sender profile per tenant.** A tenant runs *either*
+      platform mode *or* their own provider, with one sender name, switched in
+      settings. No per-message or per-campaign mode mixing. Multiple concurrent
+      profiles and per-campaign sender choice stay deferred to 8.21.
+- [x] 8.0.5 **Provider credentials are encrypted at rest** in
+      `sms_sender_profiles.credentials` (Laravel encrypted JSON cast), *not* in
+      `core_config`, which stores plaintext. Consequence: `APP_KEY` becomes
+      backup-critical — losing it makes every stored credential unrecoverable.
+      Must be called out in DEPLOYMENT.md (8.26).
+- [x] 8.0.6 **Own-provider failure: fail, then offer platform send only if credits
+      are already there.** When a tenant's own provider errors or their own
+      balance runs dry, the send **fails** — platform credits are never spent
+      silently. What happens next depends on their platform balance:
+      - **Balance covers the send** → the failure screen offers an explicit
+        *"Send via AZIMIOCRM (N credits)"* action. One click, clearly labelled
+        with the credit cost and the fact that the sender name will change to
+        `AZIMIOCRM`. Nothing is sent until they click.
+      - **Balance is zero or short** → no retry offer at all. Fail with a distinct
+        **"no platform credits"** alert that states the shortfall and links
+        straight to the credit request form (8.13).
+      Consequence: the send pipeline (8.5) needs a terminal
+      `failed_own_provider` state carrying the shortfall, and the batch screen
+      (8.8, 8.10) needs the two-branch failure UI. Never auto-fall back.
+
+### A. Foundation
+
+- [x] 8.1 **New package `packages/Azimio/Messaging`** — PSR-4 `Azimio\Messaging\`
+      → `packages/Azimio/Messaging/src`, registered in root `composer.json`
+      autoload and in `config/app.php` providers **after** `TenancyServiceProvider`
+      (it builds on the `tenant` and `super_admin` middleware aliases that
+      package registers). `MessagingServiceProvider` wires migrations, views
+      (`messaging::`), en + sw translations, config merge + publish tag
+      (`messaging-config`), routes, and empty listener/command hooks that 8.19
+      and 8.20 fill in.
+      **`src/Config/messaging.php` encodes the 8.0 decisions as real values** —
+      `credits.unit = segment` (8.0.1), `credits.refund_policy =
+      pre_submission_only` (8.0.2), the GSM-7 160/153 and UCS-2 70/67 segment
+      tables, `+255`/TZ phone defaults, quiet-hours window, batch chunking and
+      webhook settings. The Beem endpoint block carries an explicit
+      "verify against current docs in 8.3" warning rather than values anyone
+      should trust.
+      **Deliberate difference from Tenancy:** routes live in three files under
+      `src/Routes/` (`admin.php`, `super.php`, `webhook.php`) instead of inline
+      in the provider, because this module has three different middleware
+      stacks — tenant admin `['web','user','tenant','admin_locale']`, super
+      admin `['web','user','super_admin','admin_locale']`, and public
+      signature-verified webhooks with no session. Each file is a stub naming
+      the items that populate it.
+      en/sw lang stubs already carry the two distinct 8.0.6 failure strings
+      (`retry-via-platform` vs `no-platform-credits`). `.env.example` documents
+      the new keys with `AZIMIO_SMS_DRIVER=log` as the dev default.
+      **Verified:** class autoloads, provider boots, all config keys resolve,
+      view namespace + publish tag registered, `route:list` builds (205 routes),
+      en/sw translations resolve, and every middleware alias the provider uses
+      exists (`throttle` from the Kernel, `user`/`admin_locale` from
+      `AdminServiceProvider`, `tenant`/`super_admin` from Tenancy).
+- [ ] 8.2 **Schema** (migrations `2026_11_12_0000NN_*`), all business tables carrying
+      `tenant_id` and registered in `Azimio\Tenancy\TenantTables`:
+      - `sms_sender_profiles` — **strict**, except `tenant_id = NULL` = the platform
+        `AZIMIOCRM` profile. Columns: `label`, `sender_name`, `driver`
+        (`beem|africastalking|log`), `credentials` (encrypted JSON), `is_default`,
+        `status` (`pending|approved|rejected|disabled`), `approved_at`,
+        `approved_by`, `notes`.
+      - `sms_credit_ledger` — **strict**, append-only. `type`
+        (`allocation|purchase|debit|refund|adjustment|expiry`), signed `credits`,
+        `balance_after`, polymorphic `reference` (batch/message/request),
+        `created_by`, `note`. Balance is the ledger sum; `tenants.sms_credits`
+        caches it for cheap reads and is reconcilable from the ledger.
+      - `sms_credit_requests` — **strict**. `requested_by`, `credits_requested`,
+        `reason`, `status` (`pending|approved|partially_approved|rejected`),
+        `credits_granted`, `reviewed_by`, `reviewed_at`, `admin_note`.
+      - `sms_batches` — **strict**. `sender_profile_id`, `name`, `template_id`,
+        `body`, `audience_type` (`manual|datagrid_selection|segment`),
+        `total_recipients`, per-status counts, `credits_estimated`,
+        `credits_charged`, `status`
+        (`draft|scheduled|sending|completed|partially_failed|cancelled`),
+        `scheduled_at`, `started_at`, `completed_at`, `created_by`.
+      - `sms_messages` — **strict**, the one log for everything sent. `batch_id`
+        (nullable → single send), `sender_profile_id`, polymorphic recipient
+        (person / lead / user / ad-hoc), `dest_addr` (E.164), `raw_number`, `body`,
+        `encoding` (`gsm7|ucs2`), `segments`, `credits_charged`, `cost_source`
+        (`platform|own`), `direction` (`outbound|inbound`), `status`
+        (`queued|sending|submitted|delivered|failed|rejected|undeliverable`),
+        `provider_message_id`, `provider_request_id`, `error_code`,
+        `error_message`, `scheduled_at`, `submitted_at`, `delivered_at`.
+        Indexes: `(tenant_id, created_at)`, `(tenant_id, status)`,
+        `(provider_message_id)`, `(batch_id)`.
+      - `sms_templates` — **shared** (`tenant_id = NULL` = platform template every
+        tenant can use, same pattern as `email_templates`). `name`, `body`,
+        `category` (`transactional|marketing`), `locale`.
+      - `sms_opt_outs` — **strict**, `unique(tenant_id, dest_addr)`. `source`
+        (`stop_reply|manual|import`), `person_id`, `reason`. Scoped per tenant:
+        opting out of Tenant A does not mute Tenant B.
+      - `sms_webhook_events` — raw provider callbacks (`provider`, `payload`,
+        `signature_valid`, `processed_at`) for replay and dispute evidence.
+      - `tenants` additions: `sms_credits` (cached balance, default 0),
+        `sms_mode` (`platform|own`, default `platform`),
+        `sms_low_credit_threshold` (default 50).
+- [ ] 8.3 **Driver contract + Beem driver.** `Azimio\Messaging\Contracts\SmsDriver`:
+      `send(OutboundMessage): SendResult`, `sendBulk(array): array`,
+      `balance(): ?Balance`, `senderNames(): array`. `BeemDriver` wraps Beem's
+      HTTP API (Basic auth with api key + secret, batched recipients per request,
+      `source_addr` = sender name, `schedule_time` for scheduled sends);
+      **verify every endpoint, field name and error code against the current Beem
+      Africa docs while implementing — do not trust remembered shapes.** Also
+      `LogDriver` (writes to the log, charges no credits) as the local-dev and
+      test default, and an `AfricasTalkingDriver` stub with the contract filled in
+      but `send()` throwing `NotImplemented`.
+- [ ] 8.4 **Phone normalization + segment counting** (`PhoneNormalizer`,
+      `SegmentCounter`). Normalize `07XXXXXXXX` / `+255…` / `255…` / `0255…` /
+      spaces and dashes to E.164 `+255XXXXXXXXX`; reject numbers that cannot be
+      normalized, with the reason recorded on the message row rather than silently
+      dropped. Reuse the +255 logic already in the WhatsApp deep link (5.2) and
+      pull both onto this one helper. Segments: GSM-03.38 160/153, UCS-2 70/67;
+      Swahili text stays GSM-7 (no diacritics) so cost stays predictable.
+- [ ] 8.5 **Sending pipeline.** One path for every send:
+      resolve sender profile → normalize number (8.4) → opt-out check (8.11) →
+      quiet-hours check (8.12) → segment count (8.4) → **reserve** credits
+      (platform mode only) → `SendSmsJob` queued with tenant stamping (free via
+      Phase 3.10) → driver submit → persist provider ids + status → **settle**:
+      debit the reservation on acceptance, release it on pre-submission rejection.
+      Per 8.0.2 this is **reserve-then-settle** — never debit at enqueue and hope.
+      The reservation must be atomic against concurrent batches (row lock or
+      conditional update on the cached balance) so two simultaneous sends cannot
+      both spend the last credits; 8.25 tests exactly this double-spend.
+      Own-provider failures take the 8.0.6 branch: terminal
+      `failed_own_provider` status carrying the credit shortfall, so the UI can
+      decide between offering the AZIMIOCRM retry and showing the
+      no-platform-credits alert. Batches fan out into chunked jobs with a
+      provider-friendly rate limit, and are resumable: a crashed batch restarts
+      from the first non-terminal message instead of re-sending.
+
+### B. Tenant-facing module
+
+- [ ] 8.6 **SMS settings page** (Settings → SMS). Shows the active mode and lets
+      the tenant admin **set up their own provider**: driver, sender name, API
+      key/secret, with a **"Send test SMS"** button that must pass before the
+      profile is saved as active. Shows their provider balance when the driver
+      reports one. Switching back to platform mode is one click. In platform mode
+      the page shows the `AZIMIOCRM` sender name (read-only), the credit balance,
+      and the link to request credits.
+- [ ] 8.7 **Compose single SMS.** From a person/lead/organization detail page
+      ("Send SMS" beside the existing call/WhatsApp actions) and from a standalone
+      compose screen. Live character/segment/credit counter, template picker,
+      merge-field preview against the actual recipient, opt-out warning.
+- [ ] 8.8 **Bulk send.** Build the audience from a DataGrid selection (persons or
+      leads — the mass-action path, already tenant-scoped by Phase 3.11) or by
+      pasting/importing numbers. Pre-send summary: recipients after dedupe,
+      invalid numbers listed, opt-outs excluded, segments, **total credits and
+      whether the balance covers it** — blocked with a clear message if not.
+      Confirm step before anything is submitted. Failure handling follows the
+      8.0.6 two-branch rule, and the per-segment cost (8.0.1) is spelled out in
+      the summary so a long body never surprises anyone at confirmation time.
+- [ ] 8.9 **Templates CRUD** with merge fields (`{{person.first_name}}`,
+      `{{lead.title}}`, `{{user.name}}`, `{{tenant.name}}`, …), category, and a
+      preview. Platform templates (`tenant_id = NULL`) are read-only for tenants,
+      per the Phase 6.1 guard.
+- [ ] 8.10 **Message log + batch history.** DataGrid of every message with status,
+      recipient, cost, error and timestamps; filters by status/date/batch/user;
+      CSV export; batch detail page with per-recipient breakdown and a **retry
+      failed** action. Sent messages also land on the person/lead **activity
+      timeline** so the SMS history sits with the rest of the conversation.
+- [ ] 8.11 **Opt-out management.** Opt-out list UI (add/remove/import), automatic
+      suppression at send time, and an unsubscribe instruction auto-appended to
+      `marketing`-category messages (configurable text, en/sw). Honours
+      `STOP`/`ACHA` replies once inbound is live (8.19).
+- [ ] 8.12 **Compliance guardrails** — per-tenant **quiet hours** (default
+      08:00–21:00 EAT) that defer `marketing` batches to the next window while
+      `transactional` messages pass through; a per-tenant daily send cap; and a
+      **consent note** on the bulk screen about TCRA rules and sender-ID
+      registration. **Confirm the actual TCRA / operator requirements for bulk
+      sender IDs in Tanzania before launch — treat the defaults here as a
+      placeholder, not legal advice.**
+- [ ] 8.13 **Credit request flow (tenant side).** "Request SMS credits" form
+      (quantity, reason) → creates an `sms_credit_requests` row → notifies
+      platform admins → tenant sees status and history, and is notified on
+      approval/rejection. Plus **low-balance warnings** in the UI and a queued
+      email when the balance crosses `sms_low_credit_threshold`.
+
+### C. Platform-admin module (super panel)
+
+- [ ] 8.14 **Platform SMS settings** at `/admin/super/sms`: configure the platform
+      `AZIMIOCRM` sender profile and its provider credentials, show the platform's
+      live provider balance, and set the default credit price for reference.
+- [ ] 8.15 **Credit allocation + ledger.** Allocate/deduct/adjust credits for any
+      tenant with a mandatory note; full append-only ledger view per tenant and
+      platform-wide; **reconcile action** that recomputes `tenants.sms_credits`
+      from the ledger and reports drift.
+- [ ] 8.16 **Credit request queue.** Review pending requests: approve in full,
+      approve partially, or reject with a note — approval writes the allocation
+      ledger entry in the same transaction and notifies the tenant.
+- [ ] 8.17 **Sender-name approval.** Tenant-submitted sender names land as
+      `pending`; platform admin approves/rejects with a note (a sender name must be
+      registered with the operator before it will deliver). A `pending` profile
+      cannot send.
+- [ ] 8.18 **Platform oversight**: cross-tenant message log (read-only, filterable
+      by tenant/status/date), usage and spend per tenant per month, top senders,
+      failure-rate alerting, and a global **kill switch** to pause all platform-mode
+      sending (own-provider tenants keep working — it is their credit, not ours).
+
+### D. Integrations & automation
+
+- [ ] 8.19 **Delivery reports + inbound.** Signed webhook endpoints for the Beem
+      delivery-report callback (updates `sms_messages.status`/`delivered_at`,
+      logging every payload to `sms_webhook_events`) and for inbound/two-way SMS
+      (logs the message, auto-handles `STOP`/`ACHA` opt-outs, attaches to the
+      matching person by number). Route is public + signature-verified +
+      rate-limited, and resolves tenant from the sender profile, not from the
+      request body. A polling fallback command for providers without callbacks.
+- [ ] 8.20 **Notification channel + workflow action** — *this is the original 5.3.*
+      A Laravel `sms` notification channel so existing notifications can ride SMS,
+      wired to: lead assigned, activity reminder due, quote sent. Plus a
+      **"Send SMS" workflow action** in the existing workflow builder (template +
+      recipient resolution), so tenants can automate without code. Per-user
+      opt-in for their own alert SMS.
+- [ ] 8.21 **Later / nice-to-have** (explicitly out of scope for v1, listed so they
+      are not forgotten): per-campaign sender choice and multiple concurrent sender
+      profiles; scheduled recurring campaigns; Africa's Talking driver completed;
+      SMS inside the Marketing Campaigns module; link shortening + click tracking;
+      A/B bodies; contact segments saved as reusable audiences; WhatsApp Business
+      Cloud API as a sibling channel under one "Messaging" umbrella (ties into 5.2);
+      credit auto-purchase via mobile money.
+
+### E. Cross-cutting (do not skip — Phase 3/6 lessons)
+
+- [ ] 8.22 **Tenant isolation**: add every new table to `TenantTables` (strict vs
+      shared as listed in 8.2), apply `BelongsToTenant` to every model, and verify
+      the `ScopeDataGridToTenant` listener covers the new grids (they use raw
+      `DB::table()` like all the others). **No tenant may ever read, send from, or
+      bill against another tenant's sender profile, credits, log or opt-out list.**
+- [ ] 8.23 **ACL + menu**: `sms` ACL keys (`sms`, `sms.create`, `sms.bulk`,
+      `sms.templates`, `sms.settings`, `sms.logs`) in
+      `packages/Webkul/Admin/src/Config/acl.php`, and a top-level **Messaging** menu
+      entry in `menu.php` with sub-items — so a tenant can give an agent single-send
+      rights without bulk-send or settings.
+- [ ] 8.24 **en + sw translations** for every string, including provider error
+      messages surfaced to users (Swahili first, per 5.7).
+- [ ] 8.25 **Tests**: segment counting and phone normalization (unit); credit
+      ledger arithmetic including the refund rule and concurrent-send double-spend
+      (feature); cross-tenant isolation for profiles/credits/log/opt-outs; opt-out
+      and quiet-hours suppression; webhook signature rejection; the `LogDriver`
+      end-to-end send; super-panel allocation and approval access control.
+      Extends the Phase 3.14 isolation suite rather than standing apart from it.
+- [ ] 8.26 **Docs**: DEPLOYMENT.md gets the SMS section — provider setup, sender-ID
+      registration steps, webhook URLs to whitelist, the queue worker requirement
+      for sending, `APP_KEY` warning for encrypted credentials, and the credit
+      reconciliation runbook.
+
+**Suggested order:** ~~8.0 (decisions)~~ → ~~8.1 (package)~~ → **8.2 (next —
+schema)** → 8.3 → 8.4 → 8.5 → 8.6 → 8.7 → 8.10 → 8.14 → 8.15 → 8.17 → 8.8 →
+8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 → 8.22–8.26 continuously,
+not at the end.
+Rationale: foundation first, then the narrowest useful slice (**one tenant sends
+one SMS through the Log driver and sees it logged**), then platform credits so
+platform mode works at all, then bulk, then automation. 8.22–8.26 (isolation,
+ACL, translations, tests, docs) are written alongside each item — Phase 3 showed
+that retrofitting tenant scoping is far more expensive than building it in.
+
+---
+
 ### Suggested execution order
 1 (rebrand — quick win, visible) → 2 (locale/currency) → 3 (tenancy — the big one,
 do 3.1–3.4 first, then module-by-module scoping) → 4 → 6.1–6.4 → launch → 5 as
 post-launch iterations (5.1 and 5.5 are worth pulling forward if quoting is a
 day-one use case).
+
+**Current state (2026-11-12):** Phases 0–4 and 6 are done; 5 and 7 have the
+open items marked above. **Phase 8 (Text Messaging) is the active priority** and
+runs ahead of the remaining Phase 5 and Phase 7 items.
