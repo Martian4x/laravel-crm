@@ -4,6 +4,7 @@ namespace Azimio\Messaging\Models;
 
 use Azimio\Messaging\Enums\BatchStatus;
 use Azimio\Tenancy\Concerns\BelongsToTenant;
+use Azimio\Tenancy\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Webkul\User\Models\User;
 
@@ -55,9 +56,20 @@ class Batch extends Model
         return $this->hasMany(Message::class, 'batch_id');
     }
 
+    /**
+     * The profile this batch sent through.
+     *
+     * Drops the tenant scope deliberately. In platform mode the profile is
+     * the NULL-tenant AZIMIOCRM row, which the scope would hide — leaving
+     * this relation null and every platform send failing as "sender not
+     * approved". Reaching it this way is safe because the batch itself is
+     * tenant-scoped, so a tenant can only ever arrive here through their
+     * own batch, and SenderProfile keeps `credentials` in $hidden.
+     */
     public function senderProfile()
     {
-        return $this->belongsTo(SenderProfile::class, 'sender_profile_id');
+        return $this->belongsTo(SenderProfile::class, 'sender_profile_id')
+            ->withoutGlobalScope(TenantScope::class);
     }
 
     public function template()

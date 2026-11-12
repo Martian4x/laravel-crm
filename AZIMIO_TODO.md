@@ -579,7 +579,51 @@ unless there is a reason to revisit, and record the reason here if so.
       **Caveat carried from 8.3:** these are the GSM/3GPP rules. Beem does not
       document how *they* count on `/v1/send`, so this is our model of the cost
       and still needs reconciling against a real invoice.
-- [ ] 8.5 **Sending pipeline.** One path for every send:
+- [x] 8.5 **Sending pipeline.** **DONE.** `CreditLedger`, `QuietHours`,
+      `SendPlanner` (+ `SendPlan`, `PlannedRecipient`), `SmsSender`,
+      `SendSmsJob`, `Reservation`. 22 tests across `SmsCreditLedgerTest` and
+      `SmsPipelineTest`.
+      **Reservation is a conditional UPDATE, not a read-then-write:**
+      `UPDATE tenants SET sms_credits = sms_credits - n WHERE id = ? AND
+      sms_credits >= n`. The database decides, so two batches racing for the
+      last credits cannot both win — the loser matches zero rows. No lock is
+      held across a round trip. The 8.25 double-spend case is tested here
+      rather than deferred.
+      **Crash safety:** dying between reserve and settle leaves credits held
+      with no ledger row, so the cache sits *below* the ledger sum.
+      `reconcile()` recomputes from the ledger and hands them back. Drift
+      therefore always resolves in the tenant's favour, which is the right
+      way to fail for something they paid for.
+      **A release writes no ledger row at all** — per 8.0.2 nothing was ever
+      charged, so a debit-and-refund pair would be audit noise, not
+      information. Tested by asserting the row count is unchanged.
+      **The plan the user approves is the object the pipeline executes**, so a
+      quoted price cannot drift from the charged price. Gate order matters and
+      is tested: normalize → dedupe → opt-out, because deduping or matching
+      opt-outs on the *raw* string lets `0712 345 678` and `+255712345678`
+      count as two people, or defeat a suppression outright.
+      **Bug found by the tests, in the pipeline rather than the tests:**
+      `$batch->senderProfile` returned null for every platform-mode send.
+      `SenderProfile` is STRICT (8.2 correction 1) and the platform row has
+      `tenant_id = NULL`, so the tenant scope hid it and the job failed
+      everything as `sender_not_approved`. The relation on `Batch` and
+      `Message` now drops the tenant scope — safe because the batch itself is
+      tenant-scoped, so a tenant can only reach it through their own batch,
+      and `credentials` stays in `$hidden`. This is the second time making
+      that table STRICT has had a knock-on effect; worth remembering when
+      anything else loads a profile.
+      **Resumability is re-reading, not bookkeeping:** the job always queries
+      which messages are still non-terminal instead of trusting a list
+      captured at dispatch. A retried job therefore cannot re-charge or
+      re-deliver, which is tested by running the job twice and asserting the
+      balance and provider request ids are unchanged.
+      **Still to wire (needs the UI items):** the 8.0.6 retry path is recorded
+      on the message (`failed_own_provider` + `credit_shortfall`) but has no
+      button yet (8.8/8.10); per-tenant quiet-hours overrides still read
+      platform config (8.12); a deferred batch is marked `scheduled` with a
+      delayed job but there is no scheduler sweep to pick up ones whose
+      worker was down.
+      Original scope for reference:
       resolve sender profile → normalize number (8.4) → opt-out check (8.11) →
       quiet-hours check (8.12) → segment count (8.4) → **reserve** credits
       (platform mode only) → `SendSmsJob` queued with tenant stamping (free via
@@ -736,7 +780,7 @@ unless there is a reason to revisit, and record the reason here if so.
       reconciliation runbook.
 
 **Suggested order:** ~~8.0~~ → ~~8.1~~ → ~~8.2~~ → ~~8.3 (drivers)~~ →
-~~8.4 (phone + segments)~~ → **8.5 (next — sending pipeline)** → 8.6 → 8.7 →
+~~8.4~~ → ~~8.5 (pipeline)~~ → **8.6 (next — tenant SMS settings)** → 8.7 →
 8.10 → 8.14 →
 8.15 → 8.17 → 8.8 → 8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 →
 8.22–8.26 continuously, not at the end.

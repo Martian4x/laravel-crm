@@ -58,9 +58,15 @@ class Message extends Model
         return $this->belongsTo(Batch::class, 'batch_id');
     }
 
+    /**
+     * Drops the tenant scope for the same reason as Batch::senderProfile():
+     * in platform mode this is the NULL-tenant AZIMIOCRM row, which the
+     * scope would otherwise hide.
+     */
     public function senderProfile()
     {
-        return $this->belongsTo(SenderProfile::class, 'sender_profile_id');
+        return $this->belongsTo(SenderProfile::class, 'sender_profile_id')
+            ->withoutGlobalScope(TenantScope::class);
     }
 
     /**

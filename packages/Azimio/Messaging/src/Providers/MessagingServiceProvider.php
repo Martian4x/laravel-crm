@@ -3,6 +3,12 @@
 namespace Azimio\Messaging\Providers;
 
 use Azimio\Messaging\DriverManager;
+use Azimio\Messaging\Services\CreditLedger;
+use Azimio\Messaging\Services\QuietHours;
+use Azimio\Messaging\Services\SendPlanner;
+use Azimio\Messaging\Services\SmsSender;
+use Azimio\Messaging\Support\PhoneNormalizer;
+use Azimio\Messaging\Support\SegmentCounter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -36,6 +42,13 @@ class MessagingServiceProvider extends ServiceProvider
          * sharing one across tenants would send through the wrong account.
          */
         $this->app->singleton(DriverManager::class);
+
+        $this->app->singleton(CreditLedger::class);
+        $this->app->singleton(QuietHours::class);
+        $this->app->singleton(PhoneNormalizer::class);
+        $this->app->singleton(SegmentCounter::class);
+        $this->app->singleton(SendPlanner::class);
+        $this->app->singleton(SmsSender::class);
     }
 
     /**
