@@ -6,8 +6,49 @@ return [
     'acl' => [
         'sms'      => 'Messaging',
         'create'   => 'Send SMS',
+        'credits'  => 'SMS Credits',
         'logs'     => 'SMS Log',
         'settings' => 'SMS Settings',
+    ],
+
+    /**
+     * Credit request loop (8.13 tenant side / 8.16 admin side).
+     */
+    'requests' => [
+        'title'       => 'SMS Credits',
+        'queue-title' => 'Credit requests',
+        'new-title'   => 'Request more credits',
+        'new-help'    => 'Ask the platform for more SMS credits. Payment is arranged outside the CRM; an admin records the credits once it is settled.',
+        'requested'   => 'Credits requested',
+        'granted'     => 'Credits granted',
+        'reason'      => 'Reason',
+        'submit'      => 'Send request',
+        'submitted'   => 'Your request has been sent. You will be notified once it is reviewed.',
+        'none'        => 'No requests yet.',
+        'approve'     => 'Approve',
+        'reject'      => 'Reject',
+        'approved'    => 'Approved — :credits credits allocated.',
+        'rejected'    => 'Request rejected.',
+        'already-open' => 'You already have a request awaiting review.',
+        'already-decided' => 'That request has already been decided.',
+        'grant-too-small' => 'Enter at least 1 credit to approve, or use Reject.',
+        'partial-help' => 'Lower the figure to approve part of the request — it is recorded as a partial approval, not a full one.',
+        'ledger-note' => 'Credit request #:id',
+
+        'status' => [
+            'pending'            => 'Awaiting review',
+            'approved'           => 'Approved',
+            'partially-approved' => 'Partly approved',
+            'rejected'           => 'Rejected',
+        ],
+
+        'mail' => [
+            'submitted-subject' => ':tenant has requested SMS credits',
+            'submitted-intro'   => ':tenant has asked for more SMS credits.',
+            'review-link'       => 'Review the request',
+            'reviewed-subject'  => 'Your SMS credit request has been reviewed',
+            'reviewed-intro'    => 'Your request for SMS credits has been reviewed.',
+        ],
     ],
 
     /**

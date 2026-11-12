@@ -6,8 +6,46 @@ return [
     'acl' => [
         'sms'      => 'Ujumbe',
         'create'   => 'Tuma SMS',
+        'credits'  => 'Salio la SMS',
         'logs'     => 'Kumbukumbu za SMS',
         'settings' => 'Mipangilio ya SMS',
+    ],
+
+    'requests' => [
+        'title'       => 'Salio la SMS',
+        'queue-title' => 'Maombi ya salio',
+        'new-title'   => 'Omba salio zaidi',
+        'new-help'    => 'Omba salio zaidi la SMS kutoka jukwaa. Malipo hupangwa nje ya CRM; msimamizi hurekodi salio baada ya malipo kukamilika.',
+        'requested'   => 'Salio lililoombwa',
+        'granted'     => 'Salio lililotolewa',
+        'reason'      => 'Sababu',
+        'submit'      => 'Tuma ombi',
+        'submitted'   => 'Ombi lako limetumwa. Utapata taarifa baada ya kupitiwa.',
+        'none'        => 'Hakuna maombi bado.',
+        'approve'     => 'Idhinisha',
+        'reject'      => 'Kataa',
+        'approved'    => 'Imeidhinishwa — salio :credits limetolewa.',
+        'rejected'    => 'Ombi limekataliwa.',
+        'already-open' => 'Una ombi linalosubiri kupitiwa.',
+        'already-decided' => 'Ombi hilo limeamuliwa tayari.',
+        'grant-too-small' => 'Weka angalau salio 1 kuidhinisha, au tumia Kataa.',
+        'partial-help' => 'Punguza kiasi ili kuidhinisha sehemu ya ombi — hurekodiwa kama idhini ya sehemu, si kamili.',
+        'ledger-note' => 'Ombi la salio #:id',
+
+        'status' => [
+            'pending'            => 'Inasubiri kupitiwa',
+            'approved'           => 'Imeidhinishwa',
+            'partially-approved' => 'Imeidhinishwa kwa sehemu',
+            'rejected'           => 'Imekataliwa',
+        ],
+
+        'mail' => [
+            'submitted-subject' => ':tenant ameomba salio la SMS',
+            'submitted-intro'   => ':tenant ameomba salio zaidi la SMS.',
+            'review-link'       => 'Pitia ombi',
+            'reviewed-subject'  => 'Ombi lako la salio la SMS limepitiwa',
+            'reviewed-intro'    => 'Ombi lako la salio la SMS limepitiwa.',
+        ],
     ],
 
     'super' => [

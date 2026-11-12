@@ -750,7 +750,20 @@ unless there is a reason to revisit, and record the reason here if so.
       registration. **Confirm the actual TCRA / operator requirements for bulk
       sender IDs in Tanzania before launch — treat the defaults here as a
       placeholder, not legal advice.**
-- [ ] 8.13 **Credit request flow (tenant side).** "Request SMS credits" form
+- [x] 8.13 **Credit request flow (tenant side).** **DONE.**
+      `CreditRequestController`, `messaging::admin.credits`,
+      `CreditRequestSubmitted` mail to all active super admins,
+      `sms.credits` ACL key + menu entry, en/sw. Page shows the balance, a
+      low-balance warning against the per-tenant threshold, the request form
+      and the full history with each decision and its note.
+      **One open request at a time** — a queue full of duplicates from
+      someone clicking twice wastes an admin's attention. Tested.
+      **Mail failures are logged and swallowed**: the request is already
+      safely in the database, so a mail outage must not lose it.
+      **Pending:** the *queued email* when a balance crosses the threshold.
+      The warning is in the UI; the proactive email needs a scheduled check,
+      which belongs with the 8.19 scheduler work.
+      Original scope for reference:
       (quantity, reason) → creates an `sms_credit_requests` row → notifies
       platform admins → tenant sees status and history, and is notified on
       approval/rejection. Plus **low-balance warnings** in the UI and a queued
@@ -795,7 +808,28 @@ unless there is a reason to revisit, and record the reason here if so.
       tenant with a mandatory note; full append-only ledger view per tenant and
       platform-wide; **reconcile action** that recomputes `tenants.sms_credits`
       from the ledger and reports drift.
-- [ ] 8.16 **Credit request queue.** Review pending requests: approve in full,
+- [x] 8.16 **Credit request queue.** **DONE.**
+      `CreditRequestQueueController`, `messaging::super.requests` (with a
+      pending badge and a status filter), `CreditRequests` service,
+      `CreditRequestReviewed` mail to the requester. 13 tests across
+      8.13/8.16.
+      **The decision and the credits it grants are written in ONE
+      transaction** (`CreditRequests::approve`). A request marked approved
+      with nothing allocated, or credits granted with no record of who
+      approved them, are both states nobody could explain in a billing
+      dispute — so neither can happen halfway. The ledger row carries
+      `reference_type`/`reference_id` pointing back at the request, and a
+      test asserts that link.
+      **Partial approval is a first-class outcome**, not all-or-nothing: the
+      granted figure comes from the form, and granting less than asked
+      records `partially_approved`. A tenant who asked for 5,000 and got
+      1,000 sees that rather than a bare "approved". Tested.
+      **A decided request cannot be decided again**, so a double submit
+      cannot allocate twice — tested, because that one would quietly hand out
+      free credits.
+      A tenant posting to the review endpoint gets a 404 and nothing is
+      allocated; that is tested specifically.
+      Original scope for reference:
       approve partially, or reject with a note — approval writes the allocation
       ledger entry in the same transaction and notifies the tenant.
 - [ ] 8.17 **Sender-name approval.** ⚠️ **NEEDS A DECISION — 8.6 undercut the
@@ -898,7 +932,7 @@ unless there is a reason to revisit, and record the reason here if so.
 
 **Suggested order:** ~~8.0~~ → ~~8.1~~ → ~~8.2~~ → ~~8.3 (drivers)~~ →
 ~~8.4~~ → ~~8.5~~ → ~~8.6~~ → ~~8.7~~ → ~~8.10~~ → ~~8.14~~ → ~~8.15 (credits)~~ →
-**8.13 + 8.16 (next — credit request loop)** →
+~~8.13 + 8.16 (credit loop)~~ → **8.8 (next — bulk send)** →
 8.10 → 8.14 →
 8.15 → 8.17 → 8.8 → 8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 →
 8.22–8.26 continuously, not at the end.

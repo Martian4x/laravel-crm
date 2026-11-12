@@ -568,6 +568,14 @@ return [
         ],
         'sort'  => 1,
     ], [
+        'key'   => 'sms.credits',
+        'name'  => 'messaging::app.acl.credits',
+        'route' => [
+            'admin.sms.credits.index',
+            'admin.sms.credits.store',
+        ],
+        'sort'  => 3,
+    ], [
         'key'   => 'sms.logs',
         'name'  => 'messaging::app.acl.logs',
         'route' => [

@@ -305,6 +305,12 @@ return [
         'sort'       => 1,
         'icon-class' => 'icon-mail',
     ], [
+        'key'        => 'sms.credits',
+        'name'       => 'messaging::app.requests.title',
+        'route'      => 'admin.sms.credits.index',
+        'sort'       => 3,
+        'icon-class' => 'icon-dollar',
+    ], [
         'key'        => 'sms.logs',
         'name'       => 'messaging::app.sms.log.title',
         'route'      => 'admin.sms.log.index',

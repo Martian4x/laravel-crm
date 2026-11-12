@@ -1,5 +1,6 @@
 <?php
 
+use Azimio\Messaging\Http\Controllers\Super\CreditRequestQueueController;
 use Azimio\Messaging\Http\Controllers\Super\PlatformSmsController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +22,14 @@ Route::prefix('sms')->group(function () {
     Route::post('allocate', [PlatformSmsController::class, 'allocate'])->name('super.sms.allocate');
 
     Route::get('messages', [PlatformSmsController::class, 'messages'])->name('super.sms.messages');
+
+    // Credit request queue (8.16). Declared before the {id} routes so
+    // "requests" is not swallowed as a tenant id.
+    Route::get('requests', [CreditRequestQueueController::class, 'index'])
+        ->name('super.sms.requests.index');
+
+    Route::post('requests/{id}/review', [CreditRequestQueueController::class, 'review'])
+        ->name('super.sms.requests.review');
 
     Route::get('{id}/ledger', [PlatformSmsController::class, 'ledger'])->name('super.sms.ledger');
 

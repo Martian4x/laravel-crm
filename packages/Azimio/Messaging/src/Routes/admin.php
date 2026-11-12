@@ -1,6 +1,7 @@
 <?php
 
 use Azimio\Messaging\Http\Controllers\Admin\ComposeController;
+use Azimio\Messaging\Http\Controllers\Admin\CreditRequestController;
 use Azimio\Messaging\Http\Controllers\Admin\MessageLogController;
 use Azimio\Messaging\Http\Controllers\Admin\SmsSettingsController;
 use Illuminate\Support\Facades\Route;
@@ -56,4 +57,11 @@ Route::prefix('sms')->group(function () {
 
     Route::post('batches/{id}/retry', [MessageLogController::class, 'retry'])
         ->name('admin.sms.batches.retry');
+
+    // Credit balance and requests (8.13).
+    Route::get('credits', [CreditRequestController::class, 'index'])
+        ->name('admin.sms.credits.index');
+
+    Route::post('credits', [CreditRequestController::class, 'store'])
+        ->name('admin.sms.credits.store');
 });
