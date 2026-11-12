@@ -194,6 +194,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Activity timeline (8.10)
+    |--------------------------------------------------------------------------
+    |
+    | Sent messages appear on the person/lead timeline, but only for small
+    | sends. A 10,000-recipient campaign would write 10,000 timeline entries
+    | and bury the real conversation on every contact it touched; a campaign
+    | belongs in the batch history instead.
+    |
+    */
+    'activity' => [
+        'timeline_max_recipients' => (int) env('AZIMIO_SMS_TIMELINE_MAX', 10),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Delivery reports (8.19)
     |--------------------------------------------------------------------------
     |

@@ -7,6 +7,7 @@ use Azimio\Messaging\Enums\SmsStatus;
 use Azimio\Messaging\Models\Batch;
 use Azimio\Messaging\Models\Message;
 use Azimio\Messaging\Services\CreditLedger;
+use Azimio\Messaging\Services\SmsActivityLogger;
 use Azimio\Messaging\Support\OutboundMessage;
 use Azimio\Messaging\Support\Recipient;
 use Azimio\Messaging\Support\Reservation;
@@ -134,6 +135,8 @@ class SendSmsJob implements ShouldQueue
                 );
             }
 
+            $this->logToTimeline($batch, $ids);
+
             return;
         }
 
@@ -162,6 +165,24 @@ class SendSmsJob implements ShouldQueue
             'credit_shortfall' => $shortfall,
             'credits_charged'  => 0,
         ]);
+    }
+
+    /**
+     * Put small sends on the contact's timeline (8.10). Large campaigns are
+     * skipped on purpose — see SmsActivityLogger.
+     */
+    private function logToTimeline(Batch $batch, array $ids): void
+    {
+        $logger = app(SmsActivityLogger::class);
+
+        if (! $logger->shouldLog($batch)) {
+            return;
+        }
+
+        Message::withoutTenancy()->whereIn('id', $ids)
+            ->whereNotNull('recipient_type')
+            ->get()
+            ->each(fn (Message $message) => $logger->log($message));
     }
 
     private function closeBatch(Batch $batch): void

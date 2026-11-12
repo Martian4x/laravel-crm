@@ -6,11 +6,39 @@ return [
     'acl' => [
         'sms'      => 'Ujumbe',
         'create'   => 'Tuma SMS',
+        'logs'     => 'Kumbukumbu za SMS',
         'settings' => 'Mipangilio ya SMS',
     ],
 
     'sms' => [
         'title' => 'SMS',
+
+        'log' => [
+            'title'          => 'Kumbukumbu za SMS',
+            'batches'        => 'Makundi',
+            'batch'          => 'Kundi',
+            'batch-name'     => 'Jina',
+            'status'         => 'Hali',
+            'number'         => 'Namba',
+            'when'           => 'Lini',
+            'error'          => 'Hitilafu',
+            'recipients'     => 'Wapokeaji',
+            'delivered'      => 'Zilifika',
+            'failed'         => 'Zilishindikana',
+            'total-messages' => 'Jumbe',
+            'any-status'     => 'Hali yoyote',
+            'any-batch'      => 'Kundi lolote',
+            'filter'         => 'Chuja',
+            'export'         => 'Pakua CSV',
+            'empty'          => 'Hakuna jumbe bado.',
+            'no-batches'     => 'Hakuna makundi bado.',
+            'failed-summary' => 'Jumbe :count katika kundi hili zilishindikana.',
+            'retry-same'     => 'Jaribu tena zilizoshindikana',
+            'retry-queued'   => 'Jumbe :count zimepangwa tena.',
+            'nothing-to-retry' => 'Hakuna jumbe zilizoshindikana za kujaribu tena.',
+            'shortfall'      => 'Unakosa salio :credits kujaribu tena kwa AZIMIOCRM.',
+            'activity-title' => 'SMS ilitumwa kwa :number',
+        ],
 
         'compose' => [
             'title'             => 'Tuma SMS',

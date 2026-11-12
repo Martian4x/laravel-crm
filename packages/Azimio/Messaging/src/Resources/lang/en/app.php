@@ -6,11 +6,39 @@ return [
     'acl' => [
         'sms'      => 'Messaging',
         'create'   => 'Send SMS',
+        'logs'     => 'SMS Log',
         'settings' => 'SMS Settings',
     ],
 
     'sms' => [
         'title' => 'SMS',
+
+        'log' => [
+            'title'          => 'SMS Log',
+            'batches'        => 'Batches',
+            'batch'          => 'Batch',
+            'batch-name'     => 'Name',
+            'status'         => 'Status',
+            'number'         => 'Number',
+            'when'           => 'When',
+            'error'          => 'Error',
+            'recipients'     => 'Recipients',
+            'delivered'      => 'Delivered',
+            'failed'         => 'Failed',
+            'total-messages' => 'Messages',
+            'any-status'     => 'Any status',
+            'any-batch'      => 'Any batch',
+            'filter'         => 'Filter',
+            'export'         => 'Export CSV',
+            'empty'          => 'No messages yet.',
+            'no-batches'     => 'No batches yet.',
+            'failed-summary' => ':count message(s) in this batch failed.',
+            'retry-same'     => 'Retry failed',
+            'retry-queued'   => ':count message(s) re-queued.',
+            'nothing-to-retry' => 'There are no failed messages to retry.',
+            'shortfall'      => 'Short by :credits credits to retry via AZIMIOCRM.',
+            'activity-title' => 'SMS sent to :number',
+        ],
 
         'compose' => [
             'title'             => 'Send SMS',

@@ -1,6 +1,7 @@
 <?php
 
 use Azimio\Messaging\Http\Controllers\Admin\ComposeController;
+use Azimio\Messaging\Http\Controllers\Admin\MessageLogController;
 use Azimio\Messaging\Http\Controllers\Admin\SmsSettingsController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,4 +40,20 @@ Route::prefix('sms')->group(function () {
 
     Route::post('compose', [ComposeController::class, 'send'])
         ->name('admin.sms.compose.send');
+
+    // Message log and batch history (8.10).
+    Route::get('log', [MessageLogController::class, 'index'])
+        ->name('admin.sms.log.index');
+
+    Route::get('log/export', [MessageLogController::class, 'export'])
+        ->name('admin.sms.log.export');
+
+    Route::get('batches', [MessageLogController::class, 'batches'])
+        ->name('admin.sms.batches.index');
+
+    Route::get('batches/{id}', [MessageLogController::class, 'show'])
+        ->name('admin.sms.batches.show');
+
+    Route::post('batches/{id}/retry', [MessageLogController::class, 'retry'])
+        ->name('admin.sms.batches.retry');
 });

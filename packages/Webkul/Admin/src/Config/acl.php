@@ -568,6 +568,17 @@ return [
         ],
         'sort'  => 1,
     ], [
+        'key'   => 'sms.logs',
+        'name'  => 'messaging::app.acl.logs',
+        'route' => [
+            'admin.sms.log.index',
+            'admin.sms.log.export',
+            'admin.sms.batches.index',
+            'admin.sms.batches.show',
+            'admin.sms.batches.retry',
+        ],
+        'sort'  => 2,
+    ], [
         'key'   => 'sms.settings',
         'name'  => 'messaging::app.acl.settings',
         'route' => [

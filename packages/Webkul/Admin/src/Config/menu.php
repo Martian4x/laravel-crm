@@ -305,10 +305,16 @@ return [
         'sort'       => 1,
         'icon-class' => 'icon-mail',
     ], [
+        'key'        => 'sms.logs',
+        'name'       => 'messaging::app.sms.log.title',
+        'route'      => 'admin.sms.log.index',
+        'sort'       => 2,
+        'icon-class' => 'icon-activity',
+    ], [
         'key'        => 'sms.settings',
         'name'       => 'messaging::app.sms.settings.title',
         'route'      => 'admin.sms.settings.index',
-        'sort'       => 2,
+        'sort'       => 3,
         'icon-class' => 'icon-settings',
     ],
 ];
