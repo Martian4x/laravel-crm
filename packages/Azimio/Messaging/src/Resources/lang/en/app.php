@@ -5,11 +5,29 @@ return [
 
     'acl' => [
         'sms'      => 'Messaging',
+        'create'   => 'Send SMS',
         'settings' => 'SMS Settings',
     ],
 
     'sms' => [
         'title' => 'SMS',
+
+        'compose' => [
+            'title'             => 'Send SMS',
+            'to'                => 'To',
+            'message'           => 'Message',
+            'template'          => 'Template',
+            'no-template'       => 'No template',
+            'preview'           => 'Preview',
+            'characters'        => 'Characters',
+            'segments'          => 'Segments',
+            'credits'           => 'Credits',
+            'send'              => 'Send SMS',
+            'unicode-warning'   => 'Contains a non-GSM character, so capacity drops from 160 to 70 per segment.',
+            'queued'            => 'Message queued to :number.',
+            'nothing-to-send'   => 'There was nothing to send.',
+            'single-batch-name' => 'Single message',
+        ],
 
         'settings' => [
             'title'          => 'SMS Settings',

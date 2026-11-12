@@ -559,6 +559,15 @@ return [
         'route' => 'admin.sms.settings.index',
         'sort'  => 10,
     ], [
+        'key'   => 'sms.create',
+        'name'  => 'messaging::app.acl.create',
+        'route' => [
+            'admin.sms.compose.index',
+            'admin.sms.compose.preview',
+            'admin.sms.compose.send',
+        ],
+        'sort'  => 1,
+    ], [
         'key'   => 'sms.settings',
         'name'  => 'messaging::app.acl.settings',
         'route' => [

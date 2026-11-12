@@ -49,7 +49,14 @@
                                     rel="noopener"
                                     title="WhatsApp"
                                     @click.stop
-                                >WA</a><span v-if="index < inputValue.length - 1">,&nbsp;</span>
+                                >WA</a>
+
+                                <a
+                                    class="text-xs font-semibold text-brandColor hover:underline"
+                                    :href="smsHref(item.value)"
+                                    title="@lang('messaging::app.sms.compose.send')"
+                                    @click.stop
+                                >SMS</a><span v-if="index < inputValue.length - 1">,&nbsp;</span>
                             </template>
                         </template>
                     </span>
@@ -305,6 +312,24 @@
                     }
 
                     return `https://wa.me/${digits}`;
+                },
+
+                /**
+                 * Compose an SMS to this number (Azimio Phase 8.7).
+                 *
+                 * The number is passed raw and normalised server-side by
+                 * PhoneNormalizer, which is canonical — see whatsAppHref
+                 * above for why that distinction matters.
+                 *
+                 * @param {String} number
+                 * @return {String}
+                 */
+                smsHref(number) {
+                    const url = new URL("{{ route('admin.sms.compose.index') }}", window.location.origin);
+
+                    url.searchParams.set('number', String(number ?? ''));
+
+                    return url.toString();
                 },
 
                 /**

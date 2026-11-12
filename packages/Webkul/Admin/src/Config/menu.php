@@ -299,10 +299,16 @@ return [
         'sort'       => 10,
         'icon-class' => 'icon-mail',
     ], [
+        'key'        => 'sms.create',
+        'name'       => 'messaging::app.sms.compose.title',
+        'route'      => 'admin.sms.compose.index',
+        'sort'       => 1,
+        'icon-class' => 'icon-mail',
+    ], [
         'key'        => 'sms.settings',
         'name'       => 'messaging::app.sms.settings.title',
         'route'      => 'admin.sms.settings.index',
-        'sort'       => 1,
+        'sort'       => 2,
         'icon-class' => 'icon-settings',
     ],
 ];

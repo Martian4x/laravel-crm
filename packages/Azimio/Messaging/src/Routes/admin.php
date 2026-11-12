@@ -1,5 +1,6 @@
 <?php
 
+use Azimio\Messaging\Http\Controllers\Admin\ComposeController;
 use Azimio\Messaging\Http\Controllers\Admin\SmsSettingsController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,4 +27,16 @@ Route::prefix('sms')->group(function () {
 
     Route::post('settings/test', [SmsSettingsController::class, 'test'])
         ->name('admin.sms.settings.test');
+
+    // Compose a single message (8.7).
+    Route::get('compose', [ComposeController::class, 'index'])
+        ->name('admin.sms.compose.index');
+
+    // Authoritative segment/credit count for the live counter — the page
+    // deliberately does not compute this itself.
+    Route::post('compose/preview', [ComposeController::class, 'preview'])
+        ->name('admin.sms.compose.preview');
+
+    Route::post('compose', [ComposeController::class, 'send'])
+        ->name('admin.sms.compose.send');
 });

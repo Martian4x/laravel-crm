@@ -666,7 +666,32 @@ unless there is a reason to revisit, and record the reason here if so.
       reports one. Switching back to platform mode is one click. In platform mode
       the page shows the `AZIMIOCRM` sender name (read-only), the credit balance,
       and the link to request credits.
-- [ ] 8.7 **Compose single SMS.** From a person/lead/organization detail page
+- [x] 8.7 **Compose single SMS.** **DONE.** `ComposeController` (index,
+      preview, send), `MergeFields`, `messaging::admin.compose`, an **SMS**
+      link beside the existing call/WA actions on every contact number,
+      `sms.create` ACL key + menu entry, en/sw. 13 tests.
+      **The live counter calls the server rather than reimplementing GSM-7 in
+      JavaScript.** A debounced POST to `admin.sms.compose.preview` returns the
+      canonical `SegmentCount`, merged preview, credits, balance, number
+      validity and opt-out state. Decision 8.0.1 bills per segment, so the
+      number on screen must be the number charged — a second copy of the
+      segment rules in the browser is exactly what would drift from it. (The
+      WhatsApp helper in 8.4 had to be a copy because it builds a URL with no
+      server round trip; this one does not, so it is not.)
+      **Merge fields render BEFORE counting**, because a merged name changes
+      the length and therefore the price. Tested: a template that fits one
+      segment becomes two once a long name is merged in.
+      **An unknown placeholder renders as empty, never as raw
+      `{{person.first_name}}`** — sending template syntax to a customer is
+      worse than an awkward sentence and costs the same. Tested.
+      Opt-out and invalid-number states surface in the preview and disable the
+      send button, so they are seen before composing rather than after.
+      **Two bugs found by the tests:** nested `{{ }}` in the merge-field
+      buttons broke Blade compilation at render time (it compiled fine as a
+      string, so only an actual page load caught it), and a test asserting
+      "price the merged text" used a name 4 characters short of crossing the
+      segment boundary — it would have passed for the wrong reason.
+      Original scope for reference:
       ("Send SMS" beside the existing call/WhatsApp actions) and from a standalone
       compose screen. Live character/segment/credit counter, template picker,
       merge-field preview against the actual recipient, opt-out warning.
@@ -815,7 +840,7 @@ unless there is a reason to revisit, and record the reason here if so.
       reconciliation runbook.
 
 **Suggested order:** ~~8.0~~ → ~~8.1~~ → ~~8.2~~ → ~~8.3 (drivers)~~ →
-~~8.4~~ → ~~8.5~~ → ~~8.6 (settings page)~~ → **8.7 (next — compose single SMS)** →
+~~8.4~~ → ~~8.5~~ → ~~8.6~~ → ~~8.7 (compose)~~ → **8.10 (next — message log)** →
 8.10 → 8.14 →
 8.15 → 8.17 → 8.8 → 8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 →
 8.22–8.26 continuously, not at the end.

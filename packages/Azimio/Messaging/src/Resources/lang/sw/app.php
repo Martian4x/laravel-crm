@@ -5,11 +5,29 @@ return [
 
     'acl' => [
         'sms'      => 'Ujumbe',
+        'create'   => 'Tuma SMS',
         'settings' => 'Mipangilio ya SMS',
     ],
 
     'sms' => [
         'title' => 'SMS',
+
+        'compose' => [
+            'title'             => 'Tuma SMS',
+            'to'                => 'Kwenda kwa',
+            'message'           => 'Ujumbe',
+            'template'          => 'Kiolezo',
+            'no-template'       => 'Hakuna kiolezo',
+            'preview'           => 'Muonekano',
+            'characters'        => 'Herufi',
+            'segments'          => 'Vipande',
+            'credits'           => 'Salio',
+            'send'              => 'Tuma SMS',
+            'unicode-warning'   => 'Una herufi isiyo ya GSM, hivyo uwezo unashuka kutoka 160 hadi 70 kwa kipande.',
+            'queued'            => 'Ujumbe umepangwa kwenda :number.',
+            'nothing-to-send'   => 'Hakukuwa na chochote cha kutuma.',
+            'single-batch-name' => 'Ujumbe mmoja',
+        ],
 
         'settings' => [
             'title'          => 'Mipangilio ya SMS',
