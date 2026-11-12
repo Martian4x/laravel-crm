@@ -541,13 +541,44 @@ unless there is a reason to revisit, and record the reason here if so.
       160/153 figures come from their *Multicountry* product, a different API.
       **Charges must be reconciled against real Beem invoices before anyone
       bills on them** — this is the weakest assumption under 8.0.1.
-- [ ] 8.4 **Phone normalization + segment counting** (`PhoneNormalizer`,
+- [x] 8.4 **Phone normalization + segment counting** (`PhoneNormalizer`,
       `SegmentCounter`). Normalize `07XXXXXXXX` / `+255…` / `255…` / `0255…` /
       spaces and dashes to E.164 `+255XXXXXXXXX`; reject numbers that cannot be
       normalized, with the reason recorded on the message row rather than silently
-      dropped. Reuse the +255 logic already in the WhatsApp deep link (5.2) and
-      pull both onto this one helper. Segments: GSM-03.38 160/153, UCS-2 70/67;
-      Swahili text stays GSM-7 (no diacritics) so cost stays predictable.
+      dropped. Segments: GSM-03.38 160/153, UCS-2 70/67; Swahili text stays
+      GSM-7 (no diacritics) so cost stays predictable.
+      **DONE.** `PhoneNormalizer` + `PhoneNumber` + `PhoneRejection` (5 reasons,
+      en/sw), `SegmentCounter` + `SegmentCount`. 34 tests.
+      **Why normalization is a correctness issue, not tidiness:** opt-out
+      matching, dedupe and `dest_addr` all compare strings, so two spellings of
+      one number must collapse to one — otherwise a suppressed contact can be
+      messaged again just by storing `0712 345 678` instead of `+255712345678`.
+      Tested directly.
+      **Tanzanian landlines (02x) are rejected** as `not_mobile` rather than
+      submitted and charged for. Unambiguous foreign numbers (`+254…`, `+256…`)
+      pass through untouched — a CRM with Kenyan contacts must not have them
+      refused because the default market is Tanzania.
+      **Segment counting is more than `strlen/160`**, and each of these would
+      undercharge if skipped:
+      - GSM-7 applies only if *every* character is in GSM 03.38; one curly
+        quote forces the whole body to UCS-2 and cuts capacity 160 → 70.
+      - The 10 extension characters (`^{}\[~]|€`, form feed) cost **two**
+        septets each, not one.
+      - **A two-unit character may not straddle a segment boundary.** 153 euro
+        signs is 306 septets: naive `ceil(306/153)` says 2 segments, but each
+        part only holds 76 of them, so the real answer is **3**. There is a
+        test asserting both numbers, precisely to pin the difference.
+      - `é à ö ñ` *are* GSM characters — treating them as Unicode would triple
+        the price of a cheap message.
+      **The WhatsApp deep link (5.2) could NOT be merged into this helper** as
+      the item assumed: it is client-side JavaScript in the inline phone Blade
+      component and cannot call PHP. It has instead been aligned to the same
+      rules (00-prefix, trunk zero, bare national number) and commented to say
+      the PHP is canonical. It stays deliberately simpler — a dead deep link
+      costs a click, a bad SMS costs money, so validation lives server-side.
+      **Caveat carried from 8.3:** these are the GSM/3GPP rules. Beem does not
+      document how *they* count on `/v1/send`, so this is our model of the cost
+      and still needs reconciling against a real invoice.
 - [ ] 8.5 **Sending pipeline.** One path for every send:
       resolve sender profile → normalize number (8.4) → opt-out check (8.11) →
       quiet-hours check (8.12) → segment count (8.4) → **reserve** credits
@@ -705,7 +736,7 @@ unless there is a reason to revisit, and record the reason here if so.
       reconciliation runbook.
 
 **Suggested order:** ~~8.0~~ → ~~8.1~~ → ~~8.2~~ → ~~8.3 (drivers)~~ →
-**8.4 (next — phone normalization + segment counting)** → 8.5 → 8.6 → 8.7 →
+~~8.4 (phone + segments)~~ → **8.5 (next — sending pipeline)** → 8.6 → 8.7 →
 8.10 → 8.14 →
 8.15 → 8.17 → 8.8 → 8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 →
 8.22–8.26 continuously, not at the end.

@@ -29,6 +29,14 @@ return [
             'sender-not-approved'    => 'Jina lako la mtumaji linasubiri idhini, haliwezi kutuma bado.',
             'opted-out'              => 'Namba hii imejitoa kwenye ujumbe wako.',
             'invalid-number'         => 'Namba hii haikuweza kusomeka kama namba halali ya simu.',
+        ],
+
+        'phone' => [
+            'empty'        => 'Hakuna namba ya simu iliyotolewa.',
+            'too-short'    => 'Namba hii ni fupi mno kuwa namba ya simu.',
+            'too-long'     => 'Namba hii ni ndefu mno kuwa namba ya simu.',
+            'not-mobile'   => 'Hii inaonekana ni simu ya mezani, haiwezi kupokea SMS.',
+            'unrecognised' => 'Namba hii haikueleweka.',
             'quiet-hours'            => 'Ujumbe wa matangazo unasubiri hadi :time.',
         ],
     ],

@@ -271,14 +271,37 @@
                  * WhatsApp deep link: local numbers (07XX/06XX) are converted
                  * to international format with Tanzania's country code.
                  *
+                 * This mirrors Azimio\Messaging\Support\PhoneNormalizer, which
+                 * is CANONICAL — it is what the SMS module actually sends and
+                 * matches opt-outs against. This copy exists only because the
+                 * link is built in the browser and cannot call PHP. Keep the
+                 * two in step; if they ever disagree, the PHP is right.
+                 *
+                 * Intentionally simpler than the PHP: a deep link that goes
+                 * nowhere is a dead click, whereas a badly normalised SMS
+                 * costs money, so validation lives on the server side.
+                 *
                  * @param {String} number
                  * @return {String}
                  */
                 whatsAppHref(number) {
                     let digits = String(number ?? '').replace(/\D/g, '');
 
+                    // "00" is the ITU long form of "+".
+                    if (digits.startsWith('00')) {
+                        digits = digits.slice(2);
+                    }
+
+                    // A leading 0 is the national trunk prefix.
                     if (digits.startsWith('0')) {
-                        digits = '255' + digits.slice(1);
+                        digits = digits.replace(/^0+/, '');
+
+                        if (! digits.startsWith('255')) {
+                            digits = '255' + digits;
+                        }
+                    } else if (digits.length === 9) {
+                        // A bare national number, e.g. 712345678.
+                        digits = '255' + digits;
                     }
 
                     return `https://wa.me/${digits}`;
