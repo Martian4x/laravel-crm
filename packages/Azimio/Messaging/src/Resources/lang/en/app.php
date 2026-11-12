@@ -10,6 +10,51 @@ return [
         'settings' => 'SMS Settings',
     ],
 
+    /**
+     * Platform-admin SMS control (8.14 / 8.15).
+     */
+    'super' => [
+        'title'            => 'Platform SMS',
+        'all-messages'     => 'All messages',
+        'any-tenant'       => 'Any company',
+        'tenant'           => 'Company',
+        'profile-title'    => 'Platform sender account',
+        'profile-help'     => 'The AZIMIOCRM account every company on platform credits sends through. Its sender name must be registered with the operators.',
+        'provider-balance' => 'Balance at the provider',
+        'leave-blank'      => 'Leave blank to keep the stored value',
+        'save-profile'     => 'Save sender account',
+        'saved'            => 'Platform sender account saved.',
+
+        'allocate-title'   => 'Allocate credits',
+        'allocate-help'    => 'Record credits a company has paid for. Payment happens outside the CRM, so this is the record of it — a note is required.',
+        'credits-placeholder' => 'Credits (negative to deduct)',
+        'note-placeholder' => 'Reason, reference, who paid',
+        'apply'            => 'Apply',
+        'allocated'        => ':credits credits applied to :tenant.',
+        'would-go-negative' => 'That deduction would take the balance below zero (currently :balance). A company cannot owe credits.',
+
+        'type-allocation'  => 'Allocation',
+        'type-purchase'    => 'Purchase',
+        'type-adjustment'  => 'Adjustment (correction)',
+        'type-expiry'      => 'Expiry',
+
+        'ledger'           => 'Ledger',
+        'ledger-balance'   => 'Ledger balance',
+        'cached-balance'   => 'Cached balance',
+        'balance-after'    => 'Balance after',
+        'drift'            => 'Drift',
+        'drift-help'       => 'The cached balance disagrees with the ledger. This is normally an abandoned reservation — a send that died between reserving and settling. Reconciling recomputes from the ledger, which returns those credits to the company.',
+        'reconcile'        => 'Reconcile from ledger',
+        'reconciled'       => 'Reconciled. Drift of :drift credits corrected.',
+        'no-drift'         => 'No drift — the cached balance already matches the ledger.',
+        'type'             => 'Type',
+        'by'               => 'By',
+        'note'             => 'Note',
+        'no-entries'       => 'No credit movements yet.',
+        'sent'             => 'Sent',
+        'spent'            => 'Credits spent',
+    ],
+
     'sms' => [
         'title' => 'SMS',
 

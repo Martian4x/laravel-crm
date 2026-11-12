@@ -10,6 +10,48 @@ return [
         'settings' => 'Mipangilio ya SMS',
     ],
 
+    'super' => [
+        'title'            => 'SMS za Jukwaa',
+        'all-messages'     => 'Jumbe zote',
+        'any-tenant'       => 'Kampuni yoyote',
+        'tenant'           => 'Kampuni',
+        'profile-title'    => 'Akaunti ya mtumaji wa jukwaa',
+        'profile-help'     => 'Akaunti ya AZIMIOCRM ambayo kila kampuni inayotumia salio la jukwaa inatumia. Jina lake la mtumaji lazima lisajiliwe kwa watoa mitandao.',
+        'provider-balance' => 'Salio kwa mtoa huduma',
+        'leave-blank'      => 'Acha wazi ili kubakiza thamani iliyohifadhiwa',
+        'save-profile'     => 'Hifadhi akaunti ya mtumaji',
+        'saved'            => 'Akaunti ya mtumaji wa jukwaa imehifadhiwa.',
+
+        'allocate-title'   => 'Toa salio',
+        'allocate-help'    => 'Rekodi salio ambalo kampuni imelipia. Malipo hufanyika nje ya CRM, hivyo hii ni kumbukumbu yake — maelezo yanahitajika.',
+        'credits-placeholder' => 'Salio (hasi kupunguza)',
+        'note-placeholder' => 'Sababu, kumbukumbu, nani alilipa',
+        'apply'            => 'Tekeleza',
+        'allocated'        => 'Salio :credits limetolewa kwa :tenant.',
+        'would-go-negative' => 'Upunguzaji huo utapeleka salio chini ya sifuri (sasa :balance). Kampuni haiwezi kudaiwa salio.',
+
+        'type-allocation'  => 'Mgao',
+        'type-purchase'    => 'Ununuzi',
+        'type-adjustment'  => 'Marekebisho',
+        'type-expiry'      => 'Kuisha muda',
+
+        'ledger'           => 'Daftari',
+        'ledger-balance'   => 'Salio la daftari',
+        'cached-balance'   => 'Salio lililohifadhiwa',
+        'balance-after'    => 'Salio baada ya',
+        'drift'            => 'Tofauti',
+        'drift-help'       => 'Salio lililohifadhiwa halilingani na daftari. Kwa kawaida hii ni hifadhi iliyoachwa — utumaji uliokatika kati ya kuhifadhi na kumaliza. Kusawazisha hukokotoa upya kutoka daftari, hivyo salio hilo linarudi kwa kampuni.',
+        'reconcile'        => 'Sawazisha kutoka daftari',
+        'reconciled'       => 'Imesawazishwa. Tofauti ya salio :drift imerekebishwa.',
+        'no-drift'         => 'Hakuna tofauti — salio lililohifadhiwa linalingana na daftari.',
+        'type'             => 'Aina',
+        'by'               => 'Na',
+        'note'             => 'Maelezo',
+        'no-entries'       => 'Hakuna mabadiliko ya salio bado.',
+        'sent'             => 'Zilizotumwa',
+        'spent'            => 'Salio lililotumika',
+    ],
+
     'sms' => [
         'title' => 'SMS',
 

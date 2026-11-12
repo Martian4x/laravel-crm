@@ -707,7 +707,34 @@ unless there is a reason to revisit, and record the reason here if so.
       `{{lead.title}}`, `{{user.name}}`, `{{tenant.name}}`, …), category, and a
       preview. Platform templates (`tenant_id = NULL`) are read-only for tenants,
       per the Phase 6.1 guard.
-- [ ] 8.10 **Message log + batch history.** DataGrid of every message with status,
+- [x] 8.10 **Message log + batch history.** **DONE** (commit `cbc7bdf0`).
+      `MessageLogController` (index, batches, show, retry, export), three
+      views, `SmsActivityLogger`, `sms.logs` ACL key + menu entries, en/sw.
+      6 tests that **render the real pages** — 8.7 shipped a Blade error that
+      `compileString` did not catch and only a page load surfaced, so the
+      lesson is applied here.
+      **Built on Eloquent, not a raw DataGrid, deliberately.** Every other
+      grid in this codebase uses `DB::table()` and therefore depends on the
+      `ScopeDataGridToTenant` listener from Phase 3.11 to stay tenant-safe.
+      These queries go through the `Message`/`Batch` models, so the
+      `BelongsToTenant` global scope applies and the listing cannot leak
+      across tenants **by construction** rather than by remembering to
+      register a listener. This also satisfies that part of 8.22 for these
+      screens.
+      **The batch detail page is where 8.0.6 became a UI:** the "Send via
+      AZIMIOCRM" button appears only when the platform balance actually
+      covers the retry; otherwise there is no button at all, just the
+      shortfall and a link to settings. A retry **reserves afresh**, because
+      the originals were released when the messages failed (8.0.2) and a
+      spent hold must never be reused.
+      **Timeline entries are capped** at
+      `messaging.activity.timeline_max_recipients` (default 10): a
+      10,000-recipient campaign would write 10,000 entries and bury the real
+      conversation on every contact it touched. Campaigns live in the batch
+      history instead.
+      CSV export shares the filter builder with the screen, so it returns the
+      rows on display rather than a different set, and streams in chunks.
+      Original scope for reference:
       recipient, cost, error and timestamps; filters by status/date/batch/user;
       CSV export; batch detail page with per-recipient breakdown and a **retry
       failed** action. Sent messages also land on the person/lead **activity
@@ -731,10 +758,40 @@ unless there is a reason to revisit, and record the reason here if so.
 
 ### C. Platform-admin module (super panel)
 
-- [ ] 8.14 **Platform SMS settings** at `/admin/super/sms`: configure the platform
+- [x] 8.14 **Platform SMS settings** — **DONE.** `PlatformSmsController`,
+      `messaging::super.index`, an **SMS** tab in the existing super-panel nav,
+      six routes, en/sw. Configures the NULL-tenant AZIMIOCRM profile (the one
+      every platform-mode tenant sends through), shows its live provider
+      balance, and lists per-tenant credit balance, ledger balance, drift,
+      messages sent and credits spent.
+      **Blank credential fields mean "keep the stored value"**, so editing the
+      sender name does not silently wipe the API secret. Tested.
+      A tenant user gets a 404 on every route here, including the allocation
+      POST — tested, because a tenant granting themselves credits is the one
+      failure that would actually cost money.
+      Also delivers the cross-tenant message log from 8.18 early, since the
+      data was already to hand.
+      Original scope for reference:
       `AZIMIOCRM` sender profile and its provider credentials, show the platform's
       live provider balance, and set the default credit price for reference.
-- [ ] 8.15 **Credit allocation + ledger.** Allocate/deduct/adjust credits for any
+- [x] 8.15 **Credit allocation + ledger.** **DONE.** Allocate, purchase,
+      adjust or expire credits for any tenant; per-tenant ledger page showing
+      every movement with who made it and why; reconcile action. 11 tests
+      across 8.14/8.15.
+      **A note is mandatory on every movement** (server-side rule, tested).
+      These rows are the evidence in a billing dispute, and "someone added
+      5,000 credits in March" is not evidence. `created_by` is recorded too.
+      **A deduction cannot drive the balance negative.** A tenant cannot owe
+      credits, and a negative balance would make every reservation fail in a
+      way nobody could diagnose — so the controller refuses and says what the
+      balance actually is. Both the refusal and the allowed case are tested.
+      **Drift is surfaced, not hidden.** The index lists cached vs ledger
+      balance per tenant and flags any difference; the ledger page explains
+      that drift is normally an abandoned reservation (a send that died
+      between reserving and settling) and that reconciling returns those
+      credits to the tenant. A test creates real drift with a stranded
+      reservation and reconciles it.
+      Original scope for reference:
       tenant with a mandatory note; full append-only ledger view per tenant and
       platform-wide; **reconcile action** that recomputes `tenants.sms_credits`
       from the ledger and reports drift.
@@ -840,7 +897,8 @@ unless there is a reason to revisit, and record the reason here if so.
       reconciliation runbook.
 
 **Suggested order:** ~~8.0~~ → ~~8.1~~ → ~~8.2~~ → ~~8.3 (drivers)~~ →
-~~8.4~~ → ~~8.5~~ → ~~8.6~~ → ~~8.7 (compose)~~ → **8.10 (next — message log)** →
+~~8.4~~ → ~~8.5~~ → ~~8.6~~ → ~~8.7~~ → ~~8.10~~ → ~~8.14~~ → ~~8.15 (credits)~~ →
+**8.13 + 8.16 (next — credit request loop)** →
 8.10 → 8.14 →
 8.15 → 8.17 → 8.8 → 8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 →
 8.22–8.26 continuously, not at the end.
