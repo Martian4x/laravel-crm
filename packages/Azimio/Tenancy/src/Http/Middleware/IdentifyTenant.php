@@ -31,6 +31,22 @@ class IdentifyTenant
                 return redirect()->route('admin.session.create');
             }
 
+            /**
+             * Registered but not verified (7.2). Deliberately a different
+             * outcome from suspension: they have not been refused, they
+             * simply have not finished signing up, so send them to the
+             * verification notice rather than logging them out with a
+             * "suspended" message they could not act on.
+             *
+             * The verification routes themselves are outside this
+             * middleware, so this cannot loop.
+             */
+            if ($tenant->isPending()) {
+                session()->put('azimio_pending_email', $user->email);
+
+                return redirect()->route('azimio.verify.notice');
+            }
+
             app(TenantManager::class)->set($tenant);
         }
 

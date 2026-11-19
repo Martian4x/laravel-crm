@@ -31,6 +31,18 @@ class TenantOnboarder
                 'status'    => Tenant::STATUS_ACTIVE,
             ]);
 
+            /**
+             * activated_at is deliberately NOT mass-assigned: a tenant
+             * created by a super admin or the console is vouched for and
+             * starts activated, while a public self-registration starts
+             * pending until its admin verifies their email (7.2). The
+             * caller says which by passing 'pending' => true.
+             */
+            $model->forceFill([
+                'activated_at'  => ($tenant['pending'] ?? false) ? null : now(),
+                'trial_ends_at' => $tenant['trial_ends_at'] ?? null,
+            ])->save();
+
             DB::table('users')->insert([
                 'name'            => $admin['name'],
                 'email'           => $admin['email'],
@@ -38,6 +50,8 @@ class TenantOnboarder
                 'tenant_id'       => $model->id,
                 'locale'          => $model->locale,
                 'status'          => 1,
+                // Verified unless this is a pending self-registration (7.2).
+                'email_verified_at' => ($tenant['pending'] ?? false) ? null : now(),
                 'is_super_admin'  => 0,
                 'role_id'         => $this->defaultAdminRoleId(),
                 'view_permission' => 'global',

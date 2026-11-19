@@ -253,7 +253,35 @@ scoped to be done one by one, in the suggested order at the end.
       `TenantOnboarder` creates tenant + admin, logs them in, redirects to dashboard
       with a welcome flash. Throttled (5/min) + honeypot field (silent drop);
       globally-unique email enforced. Linked from the login page.
-- [ ] 7.2 **Email verification**: registering admin must verify email before
+- [x] 7.2 **Email verification** — **DONE.** Migration
+      `2026_11_19_000002` adds `users.email_verified_at` and
+      `tenants.activated_at`; `VerifyEmailController` (notice, verify,
+      resend), `VerifyTenantEmail` mail, a notice page, en/sw. 12 tests.
+      **`activated_at` is a separate column, not another `status` value.** A
+      pending tenant is a *third* state alongside active/suspended, and
+      turning `status` into a string would have broken `isActive()`, the
+      super panel and every existing row at once.
+      **Existing tenants are backfilled as activated.** They predate
+      verification and were vouched for; locking them out on deploy would be
+      a far worse bug than the one this prevents. Verified: 0 unactivated
+      tenants and 0 unverified users after the migration.
+      **Behaviour change, deliberate:** registration no longer signs the
+      admin in. The company is created pending and cannot use the CRM until
+      the address is confirmed — signing them in regardless would make the
+      check decorative. The old test asserting a dashboard redirect was
+      rewritten rather than worked around.
+      **A pending tenant gets the verification notice, not the "suspended"
+      message.** They have not been refused, so a message they could do
+      nothing about would be wrong. The verify routes sit outside the
+      `tenant` middleware, so this cannot loop.
+      Links are Laravel **signed** URLs, so an id cannot be edited to verify
+      somebody else's account (tested), expire after seven days, and are
+      idempotent because people forward these mails to themselves (tested).
+      Resend is throttled and **gives the same answer whether or not the
+      address exists**, so it cannot enumerate registered emails (tested).
+      A super-admin-created tenant is vouched for and skips all of this.
+      Original scope for reference:
+- [ ] (original) 7.2 **Email verification**: registering admin must verify email before
       the tenant activates (tenant status `pending` until verified; en/sw
       verification email through the existing branded mail layout).
 - [x] 7.3 **Terms + Privacy pages** at `/terms` and `/privacy` (en/sw), linked from
@@ -262,7 +290,17 @@ scoped to be done one by one, in the suggested order at the end.
 - [x] 7.4 **New-registration notification**: queued email to all active super admins
       (tenant, admin contact, language, link to the panel); failures logged, never
       block registration.
-- [ ] 7.5 **Trial defaults + expiry**: self-registered tenants start on a
+- [x] 7.5 **Trial defaults + expiry** — **DONE.** `tenants.trial_ends_at`
+      added in the same migration; self-registration sets a trial from
+      `config('azimio.trial_days', 14)`; `azimio:tenant:expire-trials`
+      scheduled daily at 02:00 from the package's own provider.
+      **Suspends rather than deletes, and records why** — the data survives
+      if they pay, and the next admin can see the cause. A tenant with no
+      `trial_ends_at` is on a real plan and is never touched (tested), and
+      `--dry-run` reports without changing anything (tested).
+      The suspended-login message already told them to contact sales (7.1).
+      Original scope for reference:
+- [ ] (original) 7.5 **Trial defaults + expiry**: self-registered tenants start on a
       `trial` plan (e.g. 14 days, `max_users` = 3); scheduler task suspends
       expired trials; suspended-login message tells them to contact sales.
       Needs `trial_ends_at` column on tenants.
@@ -281,7 +319,29 @@ scoped to be done one by one, in the suggested order at the end.
       user dropdown (super admins only) and an amber banner on every page while
       impersonating — "You are logged in as {tenant} — Return to super admin"
       wired to `super.tenants.revert` (en/sw).
-- [ ] 7.9 **Plan editing in the super panel**: edit plan name / `max_users` /
+- [x] 7.9 **Plan editing in the super panel** — **DONE.** Plan name and
+      `max_users` were already editable; this adds **trial end** editing and
+      answers "why is this tenant suspended". 9 tests.
+      Migration `2026_11_19_000003` adds `suspension_reason` and
+      `suspended_at`. Suspending captures a reason (placeholder when none is
+      given) and **reactivating clears it**, so a stale reason never hangs
+      around on a working account.
+      **`Tenant::state()` returns one word for what is actually going on** —
+      active / trial / trial-expired / pending / suspended. A bare boolean
+      left pending verification, a lapsed trial and a deliberate suspension
+      looking identical while needing completely different responses.
+      Suspension outranks the rest, because it is the thing to act on.
+      On this screen a blank trial date means "no trial", not "leave it
+      alone" — tested, since the two readings differ.
+      **Pre-existing bug fixed:** `TenantController::update()` read
+      `currency`, `plan` and `max_users` with `?:` on `nullable` fields, so
+      any update omitting them raised "Undefined array key". Confirmed
+      present at HEAD (introduced in `4d654756`). **Third instance of this
+      exact bug class** after `260f6429` (locale) and `a9ca5baa` (batch
+      name); swept the whole Tenancy package, and these three were the only
+      remaining ones.
+      Original scope for reference:
+- [ ] (original) 7.9 **Plan editing in the super panel**: edit plan name / `max_users` /
       trial end per tenant; show why a tenant is suspended.
 - [x] 7.10 **Per-tenant outgoing mail identity**: `MessageSending` listener keeps the
       platform from-address (SPF-safe) but sets the display name to the tenant's
@@ -290,6 +350,27 @@ scoped to be done one by one, in the suggested order at the end.
       `noreply@azimio.co.tz`. **Reply-to-the-sending-user deferred (sender not
       available in queued context; needs plumbing through mailables).**
 - [ ] 7.11 **Human click-through regression** of create/edit flows per module
+      — ⚠️ **NEEDS A PERSON. This one cannot be delegated to Claude or to
+      the test suite**, and it is the last thing standing between "tested"
+      and "known to work".
+      What the automated suite does and does not cover, stated plainly:
+      - `ModuleSmokeTest` renders all 25 module index pages for both a
+        tenant admin and the super admin — **page rendering only**.
+      - The 250-odd feature tests cover the mutations they were written for
+        (tenancy, SMS, credits, registration, verification, plans) — but
+        **not** create/edit on Leads, Contacts, Organizations, Products,
+        Quotes, Activities or the Settings modules, where nobody has
+        exercised the forms end to end since the tenancy rewrite.
+      - A rendering test cannot catch a form that posts to the wrong route,
+        a validation rule that rejects valid input, an attribute that does
+        not save, or a datagrid filter that silently drops rows.
+      **Suggested approach:** one pass per module as a *tenant admin* (not
+      the super admin, whose unscoped context hides exactly the bugs
+      tenancy introduces) — create a record, edit it, filter for it, delete
+      it. Then repeat the create step as a second tenant and confirm the
+      first tenant's record is invisible.
+      Worth doing before any real customer, because the failures it would
+      catch are the kind that make a CRM feel broken rather than throw.
       as a tenant admin (carried over from 6.1 — automated smoke covers page
       rendering, not every mutation path).
 

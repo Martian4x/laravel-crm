@@ -81,7 +81,19 @@ class TenancyServiceProvider extends ServiceProvider
             $this->commands([
                 \Azimio\Tenancy\Console\Commands\CreateTenant::class,
                 \Azimio\Tenancy\Console\Commands\AdoptOrphanData::class,
+                \Azimio\Tenancy\Console\Commands\ExpireTrials::class,
             ]);
+
+            /**
+             * 7.5: suspend lapsed trials daily. Scheduled from the package
+             * so an upstream merge cannot drop it.
+             */
+            $this->app->booted(function () {
+                $this->app->make(\Illuminate\Console\Scheduling\Schedule::class)
+                    ->command('azimio:tenant:expire-trials')
+                    ->dailyAt('02:00')
+                    ->withoutOverlapping();
+            });
         }
     }
 
@@ -136,6 +148,21 @@ class TenancyServiceProvider extends ServiceProvider
             Route::post('register', [\Azimio\Tenancy\Http\Controllers\RegisterController::class, 'store'])
                 ->middleware('throttle:5,1')
                 ->name('azimio.register.store');
+
+            /**
+             * Email verification (7.2). Outside the 'tenant' middleware on
+             * purpose: a pending tenant is redirected here BY that
+             * middleware, so these routes must not be subject to it.
+             */
+            Route::get('verify', [\Azimio\Tenancy\Http\Controllers\VerifyEmailController::class, 'notice'])
+                ->name('azimio.verify.notice');
+
+            Route::get('verify/{id}', [\Azimio\Tenancy\Http\Controllers\VerifyEmailController::class, 'verify'])
+                ->name('azimio.verify.verify');
+
+            Route::post('verify/resend', [\Azimio\Tenancy\Http\Controllers\VerifyEmailController::class, 'resend'])
+                ->middleware('throttle:5,1')
+                ->name('azimio.verify.resend');
 
             Route::view('terms', 'azimio::legal.terms')->name('azimio.terms');
 

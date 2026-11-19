@@ -65,9 +65,21 @@ class TenantController extends Controller
     {
         $tenant = Tenant::findOrFail($id);
 
-        $tenant->update([
-            'status' => $tenant->isActive() ? Tenant::STATUS_SUSPENDED : Tenant::STATUS_ACTIVE,
-        ]);
+        $suspending = $tenant->isActive();
+
+        /**
+         * 7.9: record WHY. A bare boolean leaves the next admin — and the
+         * tenant on the phone asking — unable to tell non-payment from
+         * abuse from a mis-click. Reactivating clears it, so a stale
+         * reason never hangs around on a working account.
+         */
+        $tenant->forceFill([
+            'status'            => $suspending ? Tenant::STATUS_SUSPENDED : Tenant::STATUS_ACTIVE,
+            'suspended_at'      => $suspending ? now() : null,
+            'suspension_reason' => $suspending
+                ? (request()->input('reason') ?: trans('azimio::app.tenants.no-reason-given'))
+                : null,
+        ])->save();
 
         session()->flash('success', trans(
             $tenant->isActive() ? 'azimio::app.tenants.activated' : 'azimio::app.tenants.suspended'
@@ -102,15 +114,28 @@ class TenantController extends Controller
             'currency'  => 'nullable|string|max:10',
             'plan'      => 'nullable|string|max:50',
             'max_users' => 'nullable|integer|min:1|max:9999',
+            // 7.9: trial end is editable, so sales can extend one.
+            'trial_ends_at' => 'nullable|date',
         ]);
 
         $tenant->update([
             'name'      => $validated['name'],
             'locale'    => $validated['locale'],
-            'currency'  => $validated['currency'] ?: null,
-            'plan'      => $validated['plan'] ?: null,
-            'max_users' => $validated['max_users'] ?: null,
+            // These three are `nullable`, so Laravel omits the key when the
+            // field is not sent and `?:` alone raises "Undefined array key".
+            // Same trap as the locale bug in 260f6429 and the batch-name one
+            // in a9ca5baa; `?? null` first, then `?:` to keep the existing
+            // empty-string-means-null behaviour.
+            'currency'  => ($validated['currency'] ?? null) ?: null,
+            'plan'      => ($validated['plan'] ?? null) ?: null,
+            'max_users' => ($validated['max_users'] ?? null) ?: null,
         ]);
+
+        // Not mass-assignable, and a blank field means "no trial" rather
+        // than "leave it alone" — this is the screen where that is set.
+        $tenant->forceFill([
+            'trial_ends_at' => $validated['trial_ends_at'] ?? null,
+        ])->save();
 
         session()->flash('success', trans('azimio::app.tenants.updated'));
 

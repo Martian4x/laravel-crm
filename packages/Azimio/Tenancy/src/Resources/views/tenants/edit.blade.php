@@ -82,6 +82,43 @@
                     <p class="mt-1 text-xs text-gray-400">@lang('azimio::app.tenants.max-users-hint')</p>
                 </div>
 
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">@lang('azimio::app.tenants.trial-ends')</label>
+                    <input type="date" name="trial_ends_at"
+                        value="{{ old('trial_ends_at', $tenant->trial_ends_at?->toDateString()) }}"
+                        class="w-full rounded-md border px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300" />
+                    <p class="mt-1 text-xs text-gray-400">@lang('azimio::app.tenants.trial-ends-hint')</p>
+                </div>
+
+                {{--
+                    7.9: state and reason, because "suspended" as a bare
+                    boolean tells the next admin nothing — pending
+                    verification, a lapsed trial and a deliberate suspension
+                    need completely different responses.
+                --}}
+                <div class="md:col-span-2 rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-800">
+                    <p class="text-xs font-semibold text-gray-500">@lang('azimio::app.tenants.state')</p>
+
+                    <p class="font-semibold dark:text-gray-300">
+                        @lang('azimio::app.tenants.state-' . $tenant->state())
+                    </p>
+
+                    @if ($tenant->suspension_reason)
+                        <p class="mt-1 text-xs text-red-700">
+                            @lang('azimio::app.tenants.suspended-because', [
+                                'reason' => $tenant->suspension_reason,
+                                'when'   => $tenant->suspended_at?->toDayDateTimeString() ?? '—',
+                            ])
+                        </p>
+                    @endif
+
+                    @if ($tenant->isPending())
+                        <p class="mt-1 text-xs text-amber-700">
+                            @lang('azimio::app.tenants.pending-hint')
+                        </p>
+                    @endif
+                </div>
+
                 <div class="md:col-span-2">
                     <button type="submit" class="primary-button">@lang('azimio::app.tenants.save-btn')</button>
                 </div>

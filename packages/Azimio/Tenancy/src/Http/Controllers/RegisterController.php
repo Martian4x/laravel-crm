@@ -2,6 +2,7 @@
 
 namespace Azimio\Tenancy\Http\Controllers;
 
+use Azimio\Tenancy\Http\Controllers\VerifyEmailController;
 use Azimio\Tenancy\Mail\NewTenantRegistered;
 use Azimio\Tenancy\TenantOnboarder;
 use Illuminate\Routing\Controller;
@@ -43,8 +44,13 @@ class RegisterController extends Controller
 
         $tenant = $onboarder->onboard(
             [
-                'name'   => $validated['company_name'],
-                'locale' => $validated['locale'],
+                'name'    => $validated['company_name'],
+                'locale'  => $validated['locale'],
+                // 7.2: a public registration starts unverified. A tenant
+                // created by a super admin is vouched for and does not.
+                'pending' => true,
+                // 7.5: self-registered companies start on a trial.
+                'trial_ends_at' => now()->addDays((int) config('azimio.trial_days', 14)),
             ],
             [
                 'name'     => $validated['name'],
@@ -57,11 +63,19 @@ class RegisterController extends Controller
 
         $admin = User::withoutTenancy()->where('email', $validated['email'])->first();
 
-        auth()->guard('user')->login($admin);
+        /**
+         * 7.2: no longer logged straight in. The account exists but the
+         * company stays unusable until the address is confirmed, which is
+         * the point of verifying it — signing them in regardless would
+         * make the check decorative.
+         */
+        VerifyEmailController::send($admin);
 
-        session()->flash('success', trans('azimio::app.register.welcome', ['company' => $tenant->name]));
+        session()->put('azimio_pending_email', $admin->email);
 
-        return redirect()->route('admin.dashboard.index');
+        session()->flash('success', trans('azimio::app.verify.sent', ['email' => $admin->email]));
+
+        return redirect()->route('azimio.verify.notice');
     }
 
     /**
