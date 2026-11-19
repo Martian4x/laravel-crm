@@ -19,8 +19,7 @@ class CreditRequestReviewed extends Mailable
     public function __construct(
         public readonly Tenant $tenant,
         public readonly CreditRequest $creditRequest,
-    ) {
-    }
+    ) {}
 
     public function build()
     {

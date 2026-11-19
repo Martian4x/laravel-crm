@@ -4,6 +4,4 @@ namespace Azimio\Messaging\Exceptions;
 
 use RuntimeException;
 
-class MessagingException extends RuntimeException
-{
-}
+class MessagingException extends RuntimeException {}

@@ -8,7 +8,6 @@ use Azimio\Messaging\Models\Message;
 use Azimio\Messaging\Models\OptOut;
 use Azimio\Messaging\Models\SenderProfile;
 use Azimio\Messaging\Models\WebhookEvent;
-use Azimio\Messaging\Services\CreditLedger;
 use Azimio\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
@@ -134,8 +133,8 @@ it('refreshes the batch counters after a status change', function () {
 
     $batch = new Batch;
     $batch->forceFill([
-        'tenant_id' => dlrTenant()->id, 'sender_profile_id' => $profile->id,
-        'name' => 'DLR batch', 'body' => 'Habari', 'total_recipients' => 1,
+        'tenant_id'       => dlrTenant()->id, 'sender_profile_id' => $profile->id,
+        'name'            => 'DLR batch', 'body' => 'Habari', 'total_recipients' => 1,
         'submitted_count' => 1, 'status' => 'completed',
     ])->save();
 

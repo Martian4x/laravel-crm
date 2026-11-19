@@ -19,8 +19,7 @@ final class Balance
         public readonly float $amount,
         public readonly string $unit = 'credits',
         public readonly array $raw = [],
-    ) {
-    }
+    ) {}
 
     public function isLow(?int $threshold = null): bool
     {

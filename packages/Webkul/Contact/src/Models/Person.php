@@ -20,7 +20,6 @@ use Webkul\User\Models\UserProxy;
 class Person extends Model implements PersonContract
 {
     use BelongsToTenant;
-
     use CustomAttribute, HasFactory, LogsActivity;
 
     /**

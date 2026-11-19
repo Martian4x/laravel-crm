@@ -2,7 +2,6 @@
 
 namespace Webkul\Installer\Listeners;
 
-use GuzzleHttp\Client;
 use Webkul\User\Repositories\UserRepository;
 
 class Installer

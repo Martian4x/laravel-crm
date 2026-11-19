@@ -48,8 +48,7 @@ class SendSmsJob implements ShouldQueue
     public function __construct(
         public readonly int $batchId,
         public readonly int $reservedCredits = 0,
-    ) {
-    }
+    ) {}
 
     public function handle(DriverManager $drivers, CreditLedger $ledger): void
     {

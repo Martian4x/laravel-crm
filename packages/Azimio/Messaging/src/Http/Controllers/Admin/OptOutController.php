@@ -21,9 +21,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class OptOutController extends Controller
 {
-    public function __construct(private readonly PhoneNormalizer $phones)
-    {
-    }
+    public function __construct(private readonly PhoneNormalizer $phones) {}
 
     public function index(Request $request)
     {

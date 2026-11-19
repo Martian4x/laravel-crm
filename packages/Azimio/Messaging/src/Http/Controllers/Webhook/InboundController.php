@@ -41,8 +41,7 @@ class InboundController extends Controller
     public function __construct(
         private readonly PhoneNormalizer $phones,
         private readonly TenantManager $tenants,
-    ) {
-    }
+    ) {}
 
     public function __invoke(Request $request)
     {

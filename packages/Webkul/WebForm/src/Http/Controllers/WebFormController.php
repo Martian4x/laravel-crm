@@ -2,6 +2,7 @@
 
 namespace Webkul\WebForm\Http\Controllers;
 
+use Azimio\Tenancy\TenantManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Event;
@@ -62,7 +63,7 @@ class WebFormController extends Controller
                 abort(404);
             }
 
-            app(\Azimio\Tenancy\TenantManager::class)->set($tenant);
+            app(TenantManager::class)->set($tenant);
         }
 
         $person = $this->personRepository

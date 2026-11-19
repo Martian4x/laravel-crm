@@ -118,11 +118,11 @@ it('never exports passwords or credentials', function () {
     $tenant = offTenant();
 
     DB::table('users')->insert([
-        'name' => 'Offboard Admin', 'email' => 'admin@offboard.test',
+        'name'     => 'Offboard Admin', 'email' => 'admin@offboard.test',
         'password' => bcrypt('secret-password-value'), 'tenant_id' => $tenant->id,
         // users.role_id carries a foreign key, so a real role is required.
-        'role_id' => DB::table('roles')->whereNull('tenant_id')->value('id'),
-        'status' => 1, 'is_super_admin' => 0, 'view_permission' => 'global',
+        'role_id'    => DB::table('roles')->whereNull('tenant_id')->value('id'),
+        'status'     => 1, 'is_super_admin' => 0, 'view_permission' => 'global',
         'created_at' => now(), 'updated_at' => now(),
     ]);
 

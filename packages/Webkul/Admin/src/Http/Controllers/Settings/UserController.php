@@ -15,6 +15,7 @@ use Webkul\Admin\Http\Requests\MassDestroyRequest;
 use Webkul\Admin\Http\Requests\MassUpdateRequest;
 use Webkul\Admin\Http\Resources\UserResource;
 use Webkul\Admin\Notifications\User\Create as UserCreatedNotification;
+use Webkul\User\Models\User;
 use Webkul\User\Repositories\GroupRepository;
 use Webkul\User\Repositories\RoleRepository;
 use Webkul\User\Repositories\UserRepository;
@@ -66,7 +67,7 @@ class UserController extends Controller
         if (
             ($tenant = tenant())
             && $tenant->max_users
-            && \Webkul\User\Models\User::count() >= $tenant->max_users
+            && User::count() >= $tenant->max_users
         ) {
             return response()->json([
                 'message' => trans('admin::app.settings.users.index.user-limit-reached', ['limit' => $tenant->max_users]),

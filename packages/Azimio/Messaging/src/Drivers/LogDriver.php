@@ -3,9 +3,9 @@
 namespace Azimio\Messaging\Drivers;
 
 use Azimio\Messaging\Contracts\SmsDriver;
+use Azimio\Messaging\Enums\SmsStatus;
 use Azimio\Messaging\Support\Balance;
 use Azimio\Messaging\Support\DeliveryReport;
-use Azimio\Messaging\Enums\SmsStatus;
 use Azimio\Messaging\Support\OutboundMessage;
 use Azimio\Messaging\Support\SendResult;
 use Illuminate\Support\Facades\Log;
@@ -24,9 +24,7 @@ use Illuminate\Support\Str;
  */
 class LogDriver implements SmsDriver
 {
-    public function __construct(private readonly array $config = [])
-    {
-    }
+    public function __construct(private readonly array $config = []) {}
 
     public function send(OutboundMessage $message): SendResult
     {

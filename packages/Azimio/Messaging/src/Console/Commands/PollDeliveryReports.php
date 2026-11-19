@@ -8,6 +8,7 @@ use Azimio\Messaging\Models\Batch;
 use Azimio\Messaging\Models\Message;
 use Azimio\Messaging\Models\SenderProfile;
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 use Throwable;
 
 /**
@@ -95,7 +96,7 @@ class PollDeliveryReports extends Command
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, Message>  $messages
+     * @param  Collection<int, Message>  $messages
      */
     private function pollRequest($driver, string $requestId, $messages): int
     {
@@ -140,7 +141,7 @@ class PollDeliveryReports extends Command
     /**
      * Keep the denormalised batch counters honest after a status change.
      *
-     * @param  \Illuminate\Support\Collection<int, int>  $batchIds
+     * @param  Collection<int, int>  $batchIds
      */
     private function refreshBatchCounts($batchIds): void
     {

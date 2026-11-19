@@ -19,9 +19,7 @@ use Azimio\Messaging\Support\SendResult;
  */
 class AfricasTalkingDriver implements SmsDriver
 {
-    public function __construct(private readonly array $config = [])
-    {
-    }
+    public function __construct(private readonly array $config = []) {}
 
     public function name(): string
     {

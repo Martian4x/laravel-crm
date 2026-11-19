@@ -7,6 +7,7 @@ use Azimio\Messaging\Models\Message;
 use Azimio\Messaging\Models\OptOut;
 use Azimio\Messaging\Models\SenderProfile;
 use Azimio\Messaging\Models\Template;
+use Azimio\Messaging\Notifications\Channels\SmsChannel;
 use Azimio\Messaging\Notifications\SmsNotification;
 use Azimio\Messaging\Services\CreditLedger;
 use Azimio\Messaging\Services\WorkflowSms;
@@ -88,12 +89,12 @@ afterEach(function () {
  */
 function deliverSms(Person $person): void
 {
-    app(Azimio\Messaging\Notifications\Channels\SmsChannel::class)
+    app(SmsChannel::class)
         ->send($person, new AutTestNotification);
 }
 it('registers sms as a notification channel', function () {
     expect(app(ChannelManager::class)->driver('sms'))
-        ->toBeInstanceOf(Azimio\Messaging\Notifications\Channels\SmsChannel::class);
+        ->toBeInstanceOf(SmsChannel::class);
 });
 
 it('sends a notification through the normal pipeline', function () {

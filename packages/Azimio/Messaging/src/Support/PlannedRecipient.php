@@ -24,8 +24,7 @@ final class PlannedRecipient
         public readonly ?PhoneRejection $rejection = null,
         public readonly ?string $recipientType = null,
         public readonly ?int $recipientId = null,
-    ) {
-    }
+    ) {}
 
     public static function sendable(string $raw, string $e164, ?string $type = null, ?int $id = null): self
     {

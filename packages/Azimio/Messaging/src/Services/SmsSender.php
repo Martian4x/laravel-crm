@@ -2,7 +2,6 @@
 
 namespace Azimio\Messaging\Services;
 
-use Azimio\Messaging\Enums\SmsMode;
 use Azimio\Messaging\Enums\SmsStatus;
 use Azimio\Messaging\Enums\TemplateCategory;
 use Azimio\Messaging\Jobs\SendSmsJob;
@@ -30,8 +29,7 @@ class SmsSender
     public function __construct(
         private readonly SendPlanner $planner,
         private readonly CreditLedger $ledger,
-    ) {
-    }
+    ) {}
 
     public function plan(
         Tenant $tenant,

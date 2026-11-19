@@ -10,7 +10,6 @@ use Azimio\Messaging\Services\QuietHours;
 use Azimio\Messaging\Services\SendPlanner;
 use Azimio\Messaging\Services\SmsSender;
 use Azimio\Tenancy\Models\Tenant;
-use Azimio\Tenancy\TenantManager;
 use Carbon\CarbonImmutable;
 use Webkul\User\Models\User;
 

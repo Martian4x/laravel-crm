@@ -26,9 +26,7 @@ use Illuminate\Support\Facades\Log;
  */
 class SmsChannel
 {
-    public function __construct(private readonly SmsSender $sender)
-    {
-    }
+    public function __construct(private readonly SmsSender $sender) {}
 
     public function send(mixed $notifiable, Notification $notification): void
     {

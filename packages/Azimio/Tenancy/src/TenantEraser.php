@@ -3,8 +3,10 @@
 namespace Azimio\Tenancy;
 
 use Azimio\Tenancy\Models\Tenant;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -75,7 +77,7 @@ class TenantEraser
      * Grace runs from when they were suspended; a tenant suspended before
      * `suspended_at` existed falls back to its last update.
      */
-    public function eligibleAt(Tenant $tenant): \Carbon\CarbonInterface
+    public function eligibleAt(Tenant $tenant): CarbonInterface
     {
         $from = $tenant->suspended_at ?? $tenant->updated_at ?? $tenant->created_at;
 
@@ -132,7 +134,7 @@ class TenantEraser
 
         // Activity and quote attachments live behind their own tables.
         foreach (['activities' => 'file_path', 'quotes' => 'file_path'] as $table => $column) {
-            if (! \Illuminate\Support\Facades\Schema::hasColumn($table, $column)) {
+            if (! Schema::hasColumn($table, $column)) {
                 continue;
             }
 

@@ -20,9 +20,7 @@ use Illuminate\Routing\Controller;
  */
 class TemplateController extends Controller
 {
-    public function __construct(private readonly SegmentCounter $segments)
-    {
-    }
+    public function __construct(private readonly SegmentCounter $segments) {}
 
     public function index()
     {

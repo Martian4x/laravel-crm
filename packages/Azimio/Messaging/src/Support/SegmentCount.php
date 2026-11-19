@@ -17,8 +17,7 @@ final class SegmentCount
         public readonly int $length,
         public readonly int $segments,
         public readonly int $remainingInLastSegment,
-    ) {
-    }
+    ) {}
 
     /**
      * Credits for sending this body to one recipient.

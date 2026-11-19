@@ -1,7 +1,9 @@
 <?php
 
+use Azimio\Tenancy\Listeners\ScopeDataGridToTenant;
 use Azimio\Tenancy\Models\Tenant;
 use Azimio\Tenancy\TenantManager;
+use Illuminate\Support\Facades\DB;
 use Webkul\Contact\Models\Person;
 use Webkul\Lead\Models\Pipeline;
 
@@ -74,17 +76,17 @@ it('scopes raw datagrid query builders to the tenant', function () {
         }
     };
 
-    $grid->qb = \Illuminate\Support\Facades\DB::table('leads');
+    $grid->qb = DB::table('leads');
 
-    app(\Azimio\Tenancy\Listeners\ScopeDataGridToTenant::class)
+    app(ScopeDataGridToTenant::class)
         ->handle('datagrid.lead_data_grid.query_builder.set.after', [$grid]);
 
     expect($grid->qb->toSql())->toContain('`leads`.`tenant_id`');
 
     // Shared-defaults table gets the "own OR platform" filter
-    $grid->qb = \Illuminate\Support\Facades\DB::table('lead_pipelines');
+    $grid->qb = DB::table('lead_pipelines');
 
-    app(\Azimio\Tenancy\Listeners\ScopeDataGridToTenant::class)
+    app(ScopeDataGridToTenant::class)
         ->handle('datagrid.pipeline_data_grid.query_builder.set.after', [$grid]);
 
     expect($grid->qb->toSql())->toContain('is null');

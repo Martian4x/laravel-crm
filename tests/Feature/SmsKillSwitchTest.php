@@ -2,6 +2,7 @@
 
 use Azimio\Messaging\Enums\SenderProfileStatus;
 use Azimio\Messaging\Enums\SmsStatus;
+use Azimio\Messaging\Mail\SmsFailureRateAlert;
 use Azimio\Messaging\Models\Batch;
 use Azimio\Messaging\Models\CreditLedgerEntry;
 use Azimio\Messaging\Models\Message;
@@ -10,6 +11,7 @@ use Azimio\Messaging\Services\CreditLedger;
 use Azimio\Messaging\Services\SmsSender;
 use Azimio\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
 use Webkul\User\Models\User;
 
 /**
@@ -167,30 +169,30 @@ it('shows the pause state and monthly usage on the super page', function () {
 });
 
 it('alerts platform admins when a tenant failure rate is high', function () {
-    Illuminate\Support\Facades\Mail::fake();
+    Mail::fake();
 
     // 10 of 20 failed: 50%, over the 25% threshold.
     ksMessages(ksPlatformProfile(), failed: 10, delivered: 10);
 
     test()->artisan('azimio:sms:check-failure-rate')->assertSuccessful();
 
-    Illuminate\Support\Facades\Mail::assertQueued(Azimio\Messaging\Mail\SmsFailureRateAlert::class);
+    Mail::assertQueued(SmsFailureRateAlert::class);
 });
 
 it('ignores a failure rate below the minimum volume', function () {
     // One failure out of two is 50% and means nothing; alerting on it would
     // make the alert worthless.
-    Illuminate\Support\Facades\Mail::fake();
+    Mail::fake();
 
     ksMessages(ksPlatformProfile(), failed: 1, delivered: 1);
 
     test()->artisan('azimio:sms:check-failure-rate')->assertSuccessful();
 
-    Illuminate\Support\Facades\Mail::assertNotQueued(Azimio\Messaging\Mail\SmsFailureRateAlert::class);
+    Mail::assertNotQueued(SmsFailureRateAlert::class);
 });
 
 it('alerts only once a day per tenant', function () {
-    Illuminate\Support\Facades\Mail::fake();
+    Mail::fake();
 
     ksMessages(ksPlatformProfile(), failed: 25, delivered: 0);
 
@@ -198,5 +200,5 @@ it('alerts only once a day per tenant', function () {
     test()->artisan('azimio:sms:check-failure-rate')->assertSuccessful();
 
     // A provider outage would otherwise mail on every hourly run.
-    Illuminate\Support\Facades\Mail::assertQueued(Azimio\Messaging\Mail\SmsFailureRateAlert::class, 1);
+    Mail::assertQueued(SmsFailureRateAlert::class, 1);
 });

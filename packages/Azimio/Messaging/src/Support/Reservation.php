@@ -17,8 +17,7 @@ final class Reservation
         public readonly int $credits,
         public readonly ?string $referenceType = null,
         public readonly ?int $referenceId = null,
-    ) {
-    }
+    ) {}
 
     public function isEmpty(): bool
     {

@@ -38,8 +38,7 @@ class SendPlanner
         private readonly SegmentCounter $segments,
         private readonly QuietHours $quietHours,
         private readonly CreditLedger $ledger,
-    ) {
-    }
+    ) {}
 
     /**
      * @param  array<int, string|array{number: string, type?: string, id?: int}>  $recipients

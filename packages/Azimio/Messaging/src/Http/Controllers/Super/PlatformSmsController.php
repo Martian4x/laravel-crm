@@ -12,7 +12,6 @@ use Azimio\Messaging\Services\CreditLedger;
 use Azimio\Tenancy\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Platform SMS control (8.14 + 8.15).
@@ -27,8 +26,7 @@ class PlatformSmsController extends Controller
     public function __construct(
         private readonly CreditLedger $ledger,
         private readonly DriverManager $drivers,
-    ) {
-    }
+    ) {}
 
     /**
      * Platform sender profile, its provider balance, and credit usage per
@@ -230,6 +228,7 @@ class PlatformSmsController extends Controller
             ],
         ]);
     }
+
     /**
      * Pause or resume ALL platform-mode sending (8.18).
      *

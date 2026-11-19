@@ -86,7 +86,7 @@ it('saves the platform sender account', function () {
 
 it('keeps the stored secret when the field is left blank', function () {
     test()->actingAs(superAdmin())->post(route('super.sms.store'), [
-        'driver' => 'log', 'sender_name' => 'PLATTEST',
+        'driver'  => 'log', 'sender_name' => 'PLATTEST',
         'api_key' => 'original-key', 'secret_key' => 'original-secret',
     ]);
 

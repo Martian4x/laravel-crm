@@ -2,6 +2,8 @@
 
 namespace Webkul\Automation\Helpers\Entity;
 
+use Azimio\Messaging\Models\Template;
+use Azimio\Messaging\Services\WorkflowSms;
 use Illuminate\Support\Facades\Mail;
 use Webkul\Activity\Repositories\ActivityRepository;
 use Webkul\Admin\Notifications\Common;
@@ -101,7 +103,7 @@ class Lead extends AbstractEntity
                  */
                 'id'      => 'send_sms_to_person',
                 'name'    => trans('messaging::app.workflow.send-sms-to-person'),
-                'options' => \Azimio\Messaging\Models\Template::query()
+                'options' => Template::query()
                     ->orderBy('name')
                     ->get()
                     ->map(fn ($template) => ['id' => $template->id, 'value' => $template->name])
@@ -150,7 +152,7 @@ class Lead extends AbstractEntity
                      * rest of them.
                      */
                     try {
-                        app(\Azimio\Messaging\Services\WorkflowSms::class)
+                        app(WorkflowSms::class)
                             ->sendToLeadPerson($lead, (int) $action['value']);
                     } catch (\Throwable $e) {
                         report($e);

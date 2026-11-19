@@ -18,8 +18,7 @@ final class Recipient
     public function __construct(
         public readonly int $reference,
         public readonly string $destAddr,
-    ) {
-    }
+    ) {}
 
     /**
      * Digits only — no '+', no spaces. Beem's documented dest_addr format.

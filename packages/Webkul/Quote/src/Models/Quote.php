@@ -13,7 +13,6 @@ use Webkul\User\Models\UserProxy;
 class Quote extends Model implements QuoteContract
 {
     use BelongsToTenant;
-
     use CustomAttribute;
 
     protected $table = 'quotes';

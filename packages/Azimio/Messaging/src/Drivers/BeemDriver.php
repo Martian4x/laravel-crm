@@ -45,9 +45,7 @@ use Throwable;
  */
 class BeemDriver implements SmsDriver
 {
-    public function __construct(private readonly array $config = [])
-    {
-    }
+    public function __construct(private readonly array $config = []) {}
 
     public function name(): string
     {
@@ -247,14 +245,14 @@ class BeemDriver implements SmsDriver
     private function mapFailure(?int $code, int $httpStatus): SendFailure
     {
         return match ($code) {
-            101, 115 => SendFailure::InvalidNumber,
-            102      => SendFailure::InsufficientBalance,
+            101, 115      => SendFailure::InvalidNumber,
+            102           => SendFailure::InsufficientBalance,
             109, 110, 123 => SendFailure::InvalidContent,
             111, 121, 122 => SendFailure::InvalidSender,
-            112, 117 => SendFailure::InvalidSchedule,
-            114      => SendFailure::TooManyRecipients,
-            120      => SendFailure::AuthenticationFailed,
-            default  => $httpStatus === 401
+            112, 117      => SendFailure::InvalidSchedule,
+            114           => SendFailure::TooManyRecipients,
+            120           => SendFailure::AuthenticationFailed,
+            default       => $httpStatus === 401
                 ? SendFailure::AuthenticationFailed
                 : SendFailure::ProviderError,
         };

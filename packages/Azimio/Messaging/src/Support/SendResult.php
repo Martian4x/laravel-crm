@@ -25,8 +25,7 @@ final class SendResult
         public readonly int $duplicates = 0,
         public readonly int $optedOut = 0,
         public readonly array $raw = [],
-    ) {
-    }
+    ) {}
 
     public static function accepted(
         ?string $requestId,

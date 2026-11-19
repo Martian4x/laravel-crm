@@ -33,8 +33,7 @@ final class SendPlan
         public readonly ?CarbonImmutable $deferredUntil = null,
         public readonly ?int $dailyCapRemaining = null,
         public readonly bool $platformPaused = false,
-    ) {
-    }
+    ) {}
 
     /** @return PlannedRecipient[] */
     public function sendable(): array

@@ -2,9 +2,10 @@
 
 use Azimio\Tenancy\Mail\VerifyTenantEmail;
 use Azimio\Tenancy\Models\Tenant;
+use Azimio\Tenancy\TenantOnboarder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\DB;
 use Webkul\User\Models\User;
 
 afterEach(function () {
@@ -174,7 +175,7 @@ it('tolerates the same link being opened twice', function () {
 it('sends a super-admin-created tenant straight through, already verified', function () {
     // A tenant the platform created is vouched for; making a super admin
     // click a link to activate their own work would be theatre.
-    $tenant = app(Azimio\Tenancy\TenantOnboarder::class)->onboard(
+    $tenant = app(TenantOnboarder::class)->onboard(
         ['name' => 'Reg Test Co', 'locale' => 'en'],
         ['name' => 'Reg Admin', 'email' => 'admin@reg-test.co.tz', 'password' => 'secret123'],
     );

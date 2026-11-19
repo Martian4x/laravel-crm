@@ -17,8 +17,7 @@ final class SmsNotification
     public function __construct(
         public readonly string $body,
         public readonly TemplateCategory $category = TemplateCategory::Transactional,
-    ) {
-    }
+    ) {}
 
     public static function make(string $body): self
     {

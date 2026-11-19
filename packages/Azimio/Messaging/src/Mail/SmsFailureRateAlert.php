@@ -20,8 +20,7 @@ class SmsFailureRateAlert extends Mailable
         public readonly float $rate,
         public readonly int $failed,
         public readonly int $total,
-    ) {
-    }
+    ) {}
 
     public function build()
     {

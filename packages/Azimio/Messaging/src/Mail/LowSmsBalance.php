@@ -18,8 +18,7 @@ class LowSmsBalance extends Mailable
     public function __construct(
         public readonly Tenant $tenant,
         public readonly int $threshold,
-    ) {
-    }
+    ) {}
 
     public function build()
     {

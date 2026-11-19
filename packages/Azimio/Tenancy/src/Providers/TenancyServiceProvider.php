@@ -2,13 +2,20 @@
 
 namespace Azimio\Tenancy\Providers;
 
+use Azimio\Tenancy\Console\Commands\AdoptOrphanData;
+use Azimio\Tenancy\Console\Commands\CreateTenant;
+use Azimio\Tenancy\Console\Commands\ExpireTrials;
+use Azimio\Tenancy\Http\Controllers\OnboardingController;
+use Azimio\Tenancy\Http\Controllers\RegisterController;
 use Azimio\Tenancy\Http\Controllers\TenantController;
 use Azimio\Tenancy\Http\Controllers\UserController;
+use Azimio\Tenancy\Http\Controllers\VerifyEmailController;
 use Azimio\Tenancy\Http\Middleware\EnsureSuperAdmin;
 use Azimio\Tenancy\Http\Middleware\IdentifyTenant;
 use Azimio\Tenancy\Listeners\ScopeDataGridToTenant;
 use Azimio\Tenancy\Models\Tenant;
 use Azimio\Tenancy\TenantManager;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
@@ -18,6 +25,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Symfony\Component\Mime\Address;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -81,16 +89,16 @@ class TenancyServiceProvider extends ServiceProvider
 
             if (! empty($from)) {
                 $event->message->from(
-                    new \Symfony\Component\Mime\Address($from[0]->getAddress(), $tenant->name)
+                    new Address($from[0]->getAddress(), $tenant->name)
                 );
             }
         });
 
         if ($this->app->runningInConsole()) {
             $this->commands([
-                \Azimio\Tenancy\Console\Commands\CreateTenant::class,
-                \Azimio\Tenancy\Console\Commands\AdoptOrphanData::class,
-                \Azimio\Tenancy\Console\Commands\ExpireTrials::class,
+                CreateTenant::class,
+                AdoptOrphanData::class,
+                ExpireTrials::class,
             ]);
 
             /**
@@ -98,7 +106,7 @@ class TenancyServiceProvider extends ServiceProvider
              * so an upstream merge cannot drop it.
              */
             $this->app->booted(function () {
-                $this->app->make(\Illuminate\Console\Scheduling\Schedule::class)
+                $this->app->make(Schedule::class)
                     ->command('azimio:tenant:expire-trials')
                     ->dailyAt('02:00')
                     ->withoutOverlapping();
@@ -151,7 +159,7 @@ class TenancyServiceProvider extends ServiceProvider
         // since the flag is stored in tenant-scoped core_config.
         Route::middleware(['web', 'user', 'tenant', 'admin_locale'])
             ->prefix(config('app.admin_path'))
-            ->post('onboarding/dismiss', [\Azimio\Tenancy\Http\Controllers\OnboardingController::class, 'dismiss'])
+            ->post('onboarding/dismiss', [OnboardingController::class, 'dismiss'])
             ->name('azimio.onboarding.dismiss');
 
         // Reachable while impersonating a tenant user, hence no super_admin middleware.
@@ -161,10 +169,10 @@ class TenancyServiceProvider extends ServiceProvider
 
         // Public: tenant self-registration + legal pages.
         Route::middleware(['web'])->group(function () {
-            Route::get('register', [\Azimio\Tenancy\Http\Controllers\RegisterController::class, 'create'])
+            Route::get('register', [RegisterController::class, 'create'])
                 ->name('azimio.register.create');
 
-            Route::post('register', [\Azimio\Tenancy\Http\Controllers\RegisterController::class, 'store'])
+            Route::post('register', [RegisterController::class, 'store'])
                 ->middleware('throttle:5,1')
                 ->name('azimio.register.store');
 
@@ -173,13 +181,13 @@ class TenancyServiceProvider extends ServiceProvider
              * purpose: a pending tenant is redirected here BY that
              * middleware, so these routes must not be subject to it.
              */
-            Route::get('verify', [\Azimio\Tenancy\Http\Controllers\VerifyEmailController::class, 'notice'])
+            Route::get('verify', [VerifyEmailController::class, 'notice'])
                 ->name('azimio.verify.notice');
 
-            Route::get('verify/{id}', [\Azimio\Tenancy\Http\Controllers\VerifyEmailController::class, 'verify'])
+            Route::get('verify/{id}', [VerifyEmailController::class, 'verify'])
                 ->name('azimio.verify.verify');
 
-            Route::post('verify/resend', [\Azimio\Tenancy\Http\Controllers\VerifyEmailController::class, 'resend'])
+            Route::post('verify/resend', [VerifyEmailController::class, 'resend'])
                 ->middleware('throttle:5,1')
                 ->name('azimio.verify.resend');
 

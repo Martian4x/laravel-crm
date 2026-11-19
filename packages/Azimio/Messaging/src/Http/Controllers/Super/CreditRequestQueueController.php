@@ -21,9 +21,7 @@ use Webkul\User\Models\User;
  */
 class CreditRequestQueueController extends Controller
 {
-    public function __construct(private readonly CreditRequests $requests)
-    {
-    }
+    public function __construct(private readonly CreditRequests $requests) {}
 
     public function index(Request $request)
     {

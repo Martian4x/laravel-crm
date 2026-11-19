@@ -26,9 +26,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class MessageLogController extends Controller
 {
-    public function __construct(private readonly CreditLedger $ledger)
-    {
-    }
+    public function __construct(private readonly CreditLedger $ledger) {}
 
     public function index(Request $request)
     {
@@ -67,12 +65,12 @@ class MessageLogController extends Controller
         $tenant = $this->tenant();
 
         return view('messaging::admin.batch', [
-            'batch'           => $batch,
-            'messages'        => $batch->messages()->latest('id')->paginate(100),
-            'failedCount'     => $batch->messages()->whereIn('status', $this->failedStatuses())->count(),
+            'batch'            => $batch,
+            'messages'         => $batch->messages()->latest('id')->paginate(100),
+            'failedCount'      => $batch->messages()->whereIn('status', $this->failedStatuses())->count(),
             'retryableCredits' => $this->retryCost($batch),
-            'platformCredits' => $this->ledger->balance($tenant),
-            'mode'            => SmsMode::tryFrom((string) $tenant->sms_mode) ?? SmsMode::Platform,
+            'platformCredits'  => $this->ledger->balance($tenant),
+            'mode'             => SmsMode::tryFrom((string) $tenant->sms_mode) ?? SmsMode::Platform,
         ]);
     }
 

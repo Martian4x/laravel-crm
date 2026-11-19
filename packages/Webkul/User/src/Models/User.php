@@ -12,7 +12,6 @@ use Webkul\User\Contracts\User as UserContract;
 class User extends Authenticatable implements UserContract
 {
     use BelongsToTenant;
-
     use HasApiTokens, Notifiable;
 
     /**

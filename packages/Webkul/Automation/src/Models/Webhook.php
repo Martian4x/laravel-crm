@@ -10,7 +10,6 @@ use Webkul\Automation\Contracts\Webhook as ContractsWebhook;
 class Webhook extends Model implements ContractsWebhook
 {
     use BelongsToTenant;
-
     use HasFactory;
 
     /**

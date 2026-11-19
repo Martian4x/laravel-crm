@@ -8,6 +8,7 @@ use Azimio\Tenancy\TenantExporter;
 use Azimio\Tenancy\TenantOnboarder;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Webkul\User\Models\User;
 
 class TenantController extends Controller
 {
@@ -217,7 +218,7 @@ class TenantController extends Controller
     {
         $tenant = Tenant::findOrFail($id);
 
-        $target = \Webkul\User\Models\User::withoutTenancy()
+        $target = User::withoutTenancy()
             ->where('tenant_id', $tenant->id)
             ->where('status', 1)
             ->orderBy('id')
@@ -247,7 +248,7 @@ class TenantController extends Controller
             abort(404);
         }
 
-        $superAdmin = \Webkul\User\Models\User::withoutTenancy()
+        $superAdmin = User::withoutTenancy()
             ->where('id', $impersonatorId)
             ->where('is_super_admin', 1)
             ->first();

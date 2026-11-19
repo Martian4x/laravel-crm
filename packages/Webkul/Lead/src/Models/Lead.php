@@ -21,7 +21,6 @@ use Webkul\User\Models\UserProxy;
 class Lead extends Model implements LeadContract
 {
     use BelongsToTenant;
-
     use CustomAttribute, LogsActivity;
 
     /**

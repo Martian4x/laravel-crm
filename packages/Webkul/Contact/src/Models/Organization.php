@@ -12,7 +12,6 @@ use Webkul\User\Models\UserProxy;
 class Organization extends Model implements OrganizationContract
 {
     use BelongsToTenant;
-
     use CustomAttribute;
 
     protected $casts = [

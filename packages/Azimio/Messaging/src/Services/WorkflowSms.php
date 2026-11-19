@@ -28,8 +28,7 @@ class WorkflowSms
     public function __construct(
         private readonly SmsSender $sender,
         private readonly MergeFields $merge,
-    ) {
-    }
+    ) {}
 
     /**
      * Send a template to the person attached to a lead.

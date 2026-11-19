@@ -17,8 +17,7 @@ final class PhoneNumber
         public readonly string $raw,
         public readonly ?string $e164 = null,
         public readonly ?PhoneRejection $rejection = null,
-    ) {
-    }
+    ) {}
 
     public static function valid(string $raw, string $e164): self
     {

@@ -70,10 +70,10 @@ it('ticks the team step only once a second user exists', function () {
     $before = collect($checklist->steps(onbTenant()))->keyBy('key')['team']['done'];
 
     DB::table('users')->insert([
-        'name' => 'ONB Colleague', 'email' => 'colleague@onb-test.local',
-        'password' => bcrypt('secret123'), 'tenant_id' => onbTenant()->id,
-        'role_id' => DB::table('roles')->whereNull('tenant_id')->value('id'),
-        'status' => 1, 'is_super_admin' => 0, 'view_permission' => 'global',
+        'name'       => 'ONB Colleague', 'email' => 'colleague@onb-test.local',
+        'password'   => bcrypt('secret123'), 'tenant_id' => onbTenant()->id,
+        'role_id'    => DB::table('roles')->whereNull('tenant_id')->value('id'),
+        'status'     => 1, 'is_super_admin' => 0, 'view_permission' => 'global',
         'created_at' => now(), 'updated_at' => now(),
     ]);
 

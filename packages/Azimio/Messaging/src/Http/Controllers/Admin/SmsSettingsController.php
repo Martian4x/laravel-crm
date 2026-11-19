@@ -7,9 +7,11 @@ use Azimio\Messaging\Enums\SenderProfileStatus;
 use Azimio\Messaging\Enums\SmsMode;
 use Azimio\Messaging\Models\SenderProfile;
 use Azimio\Messaging\Services\CreditLedger;
+use Azimio\Messaging\Services\QuietHours;
 use Azimio\Messaging\Services\SmsSender;
 use Azimio\Messaging\Support\PhoneNormalizer;
 use Azimio\Tenancy\Models\Tenant;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 /**
@@ -25,8 +27,7 @@ class SmsSettingsController extends Controller
         private readonly DriverManager $drivers,
         private readonly CreditLedger $ledger,
         private readonly PhoneNormalizer $phones,
-    ) {
-    }
+    ) {}
 
     public function index()
     {
@@ -41,7 +42,7 @@ class SmsSettingsController extends Controller
             'platformCredits' => $this->ledger->balance($tenant),
             'providerBalance' => $this->providerBalance($profile),
             'drivers'         => $this->availableDrivers(),
-            'quietHours'      => app(\Azimio\Messaging\Services\QuietHours::class),
+            'quietHours'      => app(QuietHours::class),
         ]);
     }
 
@@ -104,7 +105,7 @@ class SmsSettingsController extends Controller
      * default" — distinct from 0, which for the cap means no limit at all.
      * Collapsing the two would silently turn someone's sending off.
      */
-    public function compliance(\Illuminate\Http\Request $request)
+    public function compliance(Request $request)
     {
         $validated = $request->validate([
             'quiet_hours_enabled' => 'nullable|boolean',

@@ -2,6 +2,9 @@
 
 namespace Azimio\Messaging\Providers;
 
+use Azimio\Messaging\Console\Commands\CheckSmsFailureRate;
+use Azimio\Messaging\Console\Commands\NotifyLowSmsBalance;
+use Azimio\Messaging\Console\Commands\PollDeliveryReports;
 use Azimio\Messaging\DriverManager;
 use Azimio\Messaging\Notifications\Channels\SmsChannel;
 use Azimio\Messaging\Services\CreditLedger;
@@ -89,8 +92,6 @@ class MessagingServiceProvider extends ServiceProvider
      * config read). Webhooks are public and therefore carry no session: they
      * are signature-verified in the controller and resolve tenant context
      * from the sender profile, never from the request body.
-     *
-     * @return void
      */
     protected function registerRoutes(): void
     {
@@ -117,8 +118,6 @@ class MessagingServiceProvider extends ServiceProvider
     /**
      * Event listeners (delivery reports, workflow hooks, notification
      * channel registration). Populated from 8.19 and 8.20 onward.
-     *
-     * @return void
      */
     protected function registerListeners(): void
     {
@@ -141,15 +140,13 @@ class MessagingServiceProvider extends ServiceProvider
     /**
      * Console commands (batch dispatch, delivery-report polling, credit
      * reconciliation). Populated from 8.5, 8.15 and 8.19 onward.
-     *
-     * @return void
      */
     protected function registerCommands(): void
     {
         $this->commands([
-            \Azimio\Messaging\Console\Commands\PollDeliveryReports::class,
-            \Azimio\Messaging\Console\Commands\NotifyLowSmsBalance::class,
-            \Azimio\Messaging\Console\Commands\CheckSmsFailureRate::class,
+            PollDeliveryReports::class,
+            NotifyLowSmsBalance::class,
+            CheckSmsFailureRate::class,
         ]);
 
         $this->scheduleCommands();

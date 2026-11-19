@@ -132,8 +132,8 @@ return [
     |
     */
     'segments' => [
-        'gsm7' => ['single' => 160, 'multipart' => 153],
-        'ucs2' => ['single' => 70,  'multipart' => 67],
+        'gsm7'                     => ['single' => 160, 'multipart' => 153],
+        'ucs2'                     => ['single' => 70,  'multipart' => 67],
         'max_segments_per_message' => (int) env('AZIMIO_SMS_MAX_SEGMENTS', 6),
     ],
 
@@ -168,10 +168,10 @@ return [
     */
     'compliance' => [
         'quiet_hours' => [
-            'enabled'  => (bool) env('AZIMIO_SMS_QUIET_HOURS', true),
-            'start'    => env('AZIMIO_SMS_QUIET_START', '21:00'),
-            'end'      => env('AZIMIO_SMS_QUIET_END', '08:00'),
-            'timezone' => env('AZIMIO_SMS_TIMEZONE', 'Africa/Dar_es_Salaam'),
+            'enabled'           => (bool) env('AZIMIO_SMS_QUIET_HOURS', true),
+            'start'             => env('AZIMIO_SMS_QUIET_START', '21:00'),
+            'end'               => env('AZIMIO_SMS_QUIET_END', '08:00'),
+            'timezone'          => env('AZIMIO_SMS_TIMEZONE', 'Africa/Dar_es_Salaam'),
             'exempt_categories' => ['transactional'],
         ],
 

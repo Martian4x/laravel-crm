@@ -36,8 +36,7 @@ class ComposeController extends Controller
         private readonly MergeFields $merge,
         private readonly PhoneNormalizer $phones,
         private readonly CreditLedger $ledger,
-    ) {
-    }
+    ) {}
 
     public function index()
     {
@@ -87,15 +86,15 @@ class ComposeController extends Controller
         $mode = SmsMode::tryFrom((string) $tenant->sms_mode) ?? SmsMode::Platform;
 
         return response()->json([
-            'preview'     => $rendered,
-            'length'      => $count->length,
-            'encoding'    => $count->encoding->value,
-            'is_unicode'  => $count->isUnicode(),
-            'segments'    => $count->segments,
-            'credits'     => $mode->usesPlatformCredits() ? $count->creditsPerRecipient() : 0,
+            'preview'      => $rendered,
+            'length'       => $count->length,
+            'encoding'     => $count->encoding->value,
+            'is_unicode'   => $count->isUnicode(),
+            'segments'     => $count->segments,
+            'credits'      => $mode->usesPlatformCredits() ? $count->creditsPerRecipient() : 0,
             'uses_credits' => $mode->usesPlatformCredits(),
-            'balance'     => $this->ledger->balance($tenant),
-            'number'      => $number->isValid() ? $number->e164 : null,
+            'balance'      => $this->ledger->balance($tenant),
+            'number'       => $number->isValid() ? $number->e164 : null,
             'number_error' => $number->isValid() || ($validated['number'] ?? '') === ''
                 ? null
                 : trans($number->rejection->translationKey()),
@@ -220,7 +219,7 @@ class ComposeController extends Controller
             $recipient instanceof Lead => $recipient->title,
             $recipient instanceof Person,
             $recipient instanceof Organization => $recipient->name,
-            default => null,
+            default                            => null,
         };
     }
 

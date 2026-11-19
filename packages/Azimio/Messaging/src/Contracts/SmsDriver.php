@@ -3,6 +3,7 @@
 namespace Azimio\Messaging\Contracts;
 
 use Azimio\Messaging\Support\Balance;
+use Azimio\Messaging\Support\DeliveryReport;
 use Azimio\Messaging\Support\OutboundMessage;
 use Azimio\Messaging\Support\SendResult;
 
@@ -54,7 +55,7 @@ interface SmsDriver
      * return an empty array here and update rows from its webhook.
      *
      * @param  string[]  $destAddrs
-     * @return \Azimio\Messaging\Support\DeliveryReport[]
+     * @return DeliveryReport[]
      */
     public function deliveryReports(string $requestId, array $destAddrs): array;
 

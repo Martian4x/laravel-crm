@@ -18,8 +18,7 @@ class VerifyTenantEmail extends Mailable
     public function __construct(
         public readonly User $user,
         public readonly string $url,
-    ) {
-    }
+    ) {}
 
     public function build()
     {

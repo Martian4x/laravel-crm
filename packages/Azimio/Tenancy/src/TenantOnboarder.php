@@ -52,11 +52,11 @@ class TenantOnboarder
                 'status'          => 1,
                 // Verified unless this is a pending self-registration (7.2).
                 'email_verified_at' => ($tenant['pending'] ?? false) ? null : now(),
-                'is_super_admin'  => 0,
-                'role_id'         => $this->defaultAdminRoleId(),
-                'view_permission' => 'global',
-                'created_at'      => now(),
-                'updated_at'      => now(),
+                'is_super_admin'    => 0,
+                'role_id'           => $this->defaultAdminRoleId(),
+                'view_permission'   => 'global',
+                'created_at'        => now(),
+                'updated_at'        => now(),
             ]);
 
             return $model;

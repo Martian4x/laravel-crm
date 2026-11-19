@@ -1,5 +1,7 @@
 <?php
 
+use Azimio\Tenancy\Database\Seeders\DevTenantSeeder;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 use Webkul\User\Models\User;
@@ -19,8 +21,8 @@ uses(TestCase::class)
     ->beforeEach(function () {
         // The feature suite runs against the shared dev database and relies
         // on the seeded dev tenants; self-heal if they were wiped externally.
-        if (! \Illuminate\Support\Facades\DB::table('tenants')->where('slug', 'twiga-traders')->exists()) {
-            (new \Azimio\Tenancy\Database\Seeders\DevTenantSeeder)->run();
+        if (! DB::table('tenants')->where('slug', 'twiga-traders')->exists()) {
+            (new DevTenantSeeder)->run();
         }
     })
     ->in('Feature');

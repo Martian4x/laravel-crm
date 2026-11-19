@@ -2,7 +2,6 @@
 
 namespace Azimio\Tenancy\Http\Controllers;
 
-use Azimio\Tenancy\Http\Controllers\VerifyEmailController;
 use Azimio\Tenancy\Mail\NewTenantRegistered;
 use Azimio\Tenancy\TenantOnboarder;
 use Illuminate\Routing\Controller;

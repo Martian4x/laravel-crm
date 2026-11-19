@@ -20,9 +20,7 @@ use Illuminate\Support\Facades\DB;
  */
 class CreditRequests
 {
-    public function __construct(private readonly CreditLedger $ledger)
-    {
-    }
+    public function __construct(private readonly CreditLedger $ledger) {}
 
     /**
      * Tenant asks for credits.

@@ -171,7 +171,7 @@ it('offers a platform retry only when there is no credit shortfall', function ()
 
     $short = Message::create([
         'dest_addr'        => '+255712000005',
-        'body'            => 'Test',
+        'body'             => 'Test',
         'status'           => SmsStatus::FailedOwnProvider->value,
         'credit_shortfall' => 12,
     ]);

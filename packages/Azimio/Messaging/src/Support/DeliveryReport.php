@@ -18,8 +18,7 @@ final class DeliveryReport
         public readonly SmsStatus $status,
         public readonly ?string $requestId = null,
         public readonly array $raw = [],
-    ) {
-    }
+    ) {}
 
     /**
      * PENDING means the network has not resolved it yet, so the poller must

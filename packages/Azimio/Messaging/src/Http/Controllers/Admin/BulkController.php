@@ -8,6 +8,7 @@ use Azimio\Messaging\Models\SenderProfile;
 use Azimio\Messaging\Models\Template;
 use Azimio\Messaging\Services\CreditLedger;
 use Azimio\Messaging\Services\MergeFields;
+use Azimio\Messaging\Services\QuietHours;
 use Azimio\Messaging\Services\SmsSender;
 use Azimio\Tenancy\Models\Tenant;
 use Illuminate\Http\Request;
@@ -33,8 +34,7 @@ class BulkController extends Controller
         private readonly SmsSender $sender,
         private readonly CreditLedger $ledger,
         private readonly MergeFields $merge,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request)
     {
@@ -175,7 +175,7 @@ class BulkController extends Controller
             session()->flash('error', trans('messaging::app.sms.compliance.cap-exceeded', [
                 'count'     => $plan->sendableCount(),
                 'remaining' => $plan->dailyCapRemaining,
-                'cap'       => app(\Azimio\Messaging\Services\QuietHours::class)->dailyCap($tenant),
+                'cap'       => app(QuietHours::class)->dailyCap($tenant),
             ]));
 
             return redirect()->route('admin.sms.bulk.index');
@@ -211,14 +211,14 @@ class BulkController extends Controller
     private function validateCompose(Request $request): array
     {
         return $request->validate([
-            'body'        => 'required|string|max:2000',
-            'category'    => 'required|in:transactional,marketing',
-            'name'        => 'nullable|string|max:255',
-            'numbers'     => 'nullable|string|max:200000',
-            'person_ids'  => 'nullable|array',
-            'person_ids.*' => 'integer',
-            'lead_ids'    => 'nullable|array',
-            'lead_ids.*'  => 'integer',
+            'body'              => 'required|string|max:2000',
+            'category'          => 'required|in:transactional,marketing',
+            'name'              => 'nullable|string|max:255',
+            'numbers'           => 'nullable|string|max:200000',
+            'person_ids'        => 'nullable|array',
+            'person_ids.*'      => 'integer',
+            'lead_ids'          => 'nullable|array',
+            'lead_ids.*'        => 'integer',
             'confirmed_credits' => 'nullable|integer',
         ]);
     }

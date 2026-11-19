@@ -29,8 +29,7 @@ final class OutboundMessage
         public readonly Encoding $encoding = Encoding::Gsm7,
         public readonly ?DateTimeInterface $scheduledAt = null,
         public readonly ?string $jobName = null,
-    ) {
-    }
+    ) {}
 
     public function recipientCount(): int
     {

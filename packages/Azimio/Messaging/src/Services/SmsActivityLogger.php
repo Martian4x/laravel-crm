@@ -48,10 +48,10 @@ class SmsActivityLogger
             'title'    => trans('messaging::app.sms.log.activity-title', [
                 'number' => $message->dest_addr,
             ]),
-            'type'     => 'sms',
-            'comment'  => $message->body,
-            'is_done'  => 1,
-            'user_id'  => auth()->id(),
+            'type'          => 'sms',
+            'comment'       => $message->body,
+            'is_done'       => 1,
+            'user_id'       => auth()->id(),
             'schedule_from' => now(),
             'schedule_to'   => now(),
         ])->save();

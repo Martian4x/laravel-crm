@@ -21,8 +21,7 @@ class CreditRequestController extends Controller
     public function __construct(
         private readonly CreditRequests $requests,
         private readonly CreditLedger $ledger,
-    ) {
-    }
+    ) {}
 
     public function index()
     {

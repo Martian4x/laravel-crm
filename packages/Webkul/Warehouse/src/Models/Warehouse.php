@@ -13,7 +13,6 @@ use Webkul\Warehouse\Contracts\Warehouse as WarehouseContract;
 class Warehouse extends Model implements WarehouseContract
 {
     use BelongsToTenant;
-
     use CustomAttribute, LogsActivity;
 
     /**
