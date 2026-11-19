@@ -16,6 +16,34 @@
 
         @include('azimio::partials.nav', ['active' => 'sms'])
 
+        {{--
+            8.18 kill switch. Pausing sets the platform profile to disabled,
+            which SendSmsJob already refuses to send from — so the switch
+            reuses an enforced gate rather than adding a parallel one.
+            Own-provider tenants keep sending: their credit, their account.
+        --}}
+        <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border {{ $platformPaused ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white' }} p-4 text-sm dark:border-gray-800 dark:bg-gray-900">
+            <div>
+                <p class="font-semibold {{ $platformPaused ? 'text-red-800' : 'dark:text-gray-300' }}">
+                    @lang($platformPaused ? 'messaging::app.super.paused-title' : 'messaging::app.super.active-title')
+                </p>
+
+                <p class="text-xs {{ $platformPaused ? 'text-red-700' : 'text-gray-500' }}">
+                    @lang('messaging::app.super.pause-help')
+                </p>
+            </div>
+
+            <form method="POST" action="{{ route('super.sms.toggle-pause') }}"
+                onsubmit="return confirm('@lang('messaging::app.super.pause-confirm')')">
+                @csrf
+
+                <button type="submit"
+                    class="rounded-md px-4 py-2 text-xs font-semibold text-white {{ $platformPaused ? 'bg-emerald-600' : 'bg-red-600' }}">
+                    @lang($platformPaused ? 'messaging::app.super.resume' : 'messaging::app.super.pause')
+                </button>
+            </form>
+        </div>
+
         @if (session('success'))
             <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
         @endif
@@ -169,6 +197,37 @@
                             </td>
                         </tr>
                     @endforeach
+                </tbody>
+            </table>
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+            <p class="px-4 pt-4 text-base font-semibold text-gray-800 dark:text-white">
+                @lang('messaging::app.super.usage-title')
+            </p>
+
+            <table class="mt-2 w-full text-left text-sm">
+                <thead class="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800">
+                    <tr>
+                        <th class="px-4 py-2">@lang('messaging::app.super.month')</th>
+                        <th class="px-4 py-2">@lang('messaging::app.sms.log.total-messages')</th>
+                        <th class="px-4 py-2">@lang('messaging::app.sms.compose.credits')</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @forelse ($monthlyUsage as $row)
+                        <tr class="border-b border-gray-100 dark:border-gray-800 dark:text-gray-300">
+                            <td class="px-4 py-2">{{ $row['month'] }}</td>
+                            <td class="px-4 py-2">{{ number_format($row['messages']) }}</td>
+                            <td class="px-4 py-2">{{ number_format($row['credits']) }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="3" class="px-4 py-6 text-center text-sm text-gray-500">
+                                @lang('messaging::app.sms.log.empty')
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>

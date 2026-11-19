@@ -72,7 +72,23 @@ class SendPlanner
             balance: $this->ledger->balance($tenant),
             deferredUntil: $this->quietHours->deferUntil($category, null, $tenant),
             dailyCapRemaining: $this->remainingToday($tenant),
+            platformPaused: $this->platformSendingPaused(),
         );
+    }
+
+    /**
+     * Whether a super admin has paused platform sending (8.18).
+     *
+     * Implemented as the platform profile's own status rather than a new
+     * setting: SenderProfileStatus::Disabled already stops SendSmsJob
+     * sending from it, so the switch reuses a gate that is tested, and
+     * cannot be out of step with what the job actually enforces.
+     */
+    private function platformSendingPaused(): bool
+    {
+        $platform = SenderProfile::platform();
+
+        return $platform !== null && ! $platform->canSend();
     }
 
     /**

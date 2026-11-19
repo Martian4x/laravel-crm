@@ -938,7 +938,33 @@ unless there is a reason to revisit, and record the reason here if so.
       **Revisit only if** the product later offers tenants branded sender
       names on the platform account — at which point this item returns in
       full, along with the fees and workflow above.
-- [ ] 8.18 **Platform oversight**: cross-tenant message log (read-only, filterable
+- [x] 8.18 **Platform oversight** — **DONE.** Kill switch, failure-rate
+      alerting, monthly usage, cross-tenant log (delivered early in 8.14).
+      8 tests.
+      **The kill switch reuses an enforced gate rather than adding a new
+      one.** Pausing sets the platform sender profile to
+      `SenderProfileStatus::Disabled`, which `SendSmsJob` already refuses to
+      send from and `SendPlan::isPlatformPaused()` now reports — so the
+      switch cannot drift out of step with what is actually enforced, which
+      a separate boolean setting could. Folded into `isSendable()`, so it is
+      the one gate again.
+      **Own-provider tenants keep sending while platform is paused**, and
+      that is tested: it is their credit and their provider account, not
+      ours to switch off.
+      **`azimio:sms:check-failure-rate`**, hourly, alerts platform admins
+      when a tenant's outbound failure rate crosses a threshold. A failing
+      integration is otherwise invisible — messages fail and the tenant
+      quietly concludes "SMS does not work". **A minimum volume is
+      required** before any rate is reported: one failure out of two is 50%
+      and means nothing, and alerting on it would make the alert worthless.
+      Throttled to one alert per tenant per day, since a provider outage
+      would otherwise mail on every run.
+      Monthly messages/credits for the last six months on the super page.
+      **Bug found while wiring:** the command's private `alert()` collided
+      with Laravel's public `Command::alert()`, which PHP refused outright.
+      Renamed to `sendAlert()`.
+      Original scope for reference:
+- [ ] 8.18 (original) **Platform oversight**: cross-tenant message log (read-only, filterable
       by tenant/status/date), usage and spend per tenant per month, top senders,
       failure-rate alerting, and a global **kill switch** to pause all platform-mode
       sending (own-provider tenants keep working — it is their credit, not ours).
@@ -1051,7 +1077,7 @@ unless there is a reason to revisit, and record the reason here if so.
 **Suggested order:** ~~8.0~~ → ~~8.1~~ → ~~8.2~~ → ~~8.3 (drivers)~~ →
 ~~8.4~~ → ~~8.5~~ → ~~8.6~~ → ~~8.7~~ → ~~8.10~~ → ~~8.14~~ → ~~8.15 (credits)~~ →
 ~~8.13 + 8.16~~ → ~~8.8 (bulk)~~ → ~~8.17 (dropped by decision)~~ →
-~~8.9~~ → ~~8.11~~ → ~~8.12~~ → ~~8.19 (DLR + inbound)~~ → **8.18 + 8.20 (next)** →
+~~8.9~~ → ~~8.11~~ → ~~8.12~~ → ~~8.19~~ → ~~8.18 (oversight)~~ → **8.20 (next — notifications + workflow)** →
 8.10 → 8.14 →
 8.15 → 8.17 → 8.8 → 8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 →
 8.22–8.26 continuously, not at the end.

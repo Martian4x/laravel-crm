@@ -21,6 +21,9 @@ Route::prefix('sms')->group(function () {
 
     Route::post('allocate', [PlatformSmsController::class, 'allocate'])->name('super.sms.allocate');
 
+    // Global kill switch for platform-mode sending (8.18).
+    Route::post('toggle-pause', [PlatformSmsController::class, 'togglePause'])->name('super.sms.toggle-pause');
+
     Route::get('messages', [PlatformSmsController::class, 'messages'])->name('super.sms.messages');
 
     // Credit request queue (8.16). Declared before the {id} routes so

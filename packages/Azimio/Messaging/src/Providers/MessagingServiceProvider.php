@@ -133,6 +133,7 @@ class MessagingServiceProvider extends ServiceProvider
         $this->commands([
             \Azimio\Messaging\Console\Commands\PollDeliveryReports::class,
             \Azimio\Messaging\Console\Commands\NotifyLowSmsBalance::class,
+            \Azimio\Messaging\Console\Commands\CheckSmsFailureRate::class,
         ]);
 
         $this->scheduleCommands();
@@ -160,6 +161,12 @@ class MessagingServiceProvider extends ServiceProvider
 
             $schedule->command('azimio:sms:notify-low-balance')
                 ->dailyAt('08:30')
+                ->withoutOverlapping();
+
+            // Catches a failing integration from our side: otherwise a
+            // tenant just assumes SMS does not work and says nothing.
+            $schedule->command('azimio:sms:check-failure-rate')
+                ->hourly()
                 ->withoutOverlapping();
         });
     }

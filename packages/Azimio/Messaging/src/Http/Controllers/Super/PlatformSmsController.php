@@ -64,6 +64,8 @@ class PlatformSmsController extends Controller
             'tenants'         => $tenants,
             'platformSender'  => config('messaging.platform.sender_name'),
             'drivers'         => ['beem' => 'Beem Africa', 'log' => 'Log (development only)'],
+            'platformPaused'  => $profile !== null && ! $profile->canSend(),
+            'monthlyUsage'    => $this->monthlyUsage(),
             'totalAllocated'  => (int) CreditLedgerEntry::withoutTenancy()
                 ->whereIn('type', [CreditType::Allocation->value, CreditType::Purchase->value])
                 ->sum('credits'),
@@ -227,5 +229,63 @@ class PlatformSmsController extends Controller
                 'status'    => $request->input('status'),
             ],
         ]);
+    }
+    /**
+     * Pause or resume ALL platform-mode sending (8.18).
+     *
+     * Implemented by flipping the platform profile's own status rather than
+     * introducing a separate setting: SenderProfileStatus::Disabled already
+     * stops SendSmsJob sending from that profile, so the switch reuses a
+     * gate that is already enforced and tested, and cannot drift out of
+     * step with it.
+     *
+     * Own-provider tenants are deliberately unaffected — it is their credit
+     * and their provider account, not ours to switch off.
+     */
+    public function togglePause()
+    {
+        $profile = SenderProfile::platform();
+
+        if (! $profile) {
+            session()->flash('error', trans('messaging::app.super.no-platform-profile'));
+
+            return redirect()->route('super.sms.index');
+        }
+
+        $paused = ! $profile->canSend();
+
+        $profile->forceFill([
+            'status' => $paused
+                ? SenderProfileStatus::Approved->value
+                : SenderProfileStatus::Disabled->value,
+        ])->save();
+
+        session()->flash('success', trans($paused
+            ? 'messaging::app.super.resumed'
+            : 'messaging::app.super.paused'));
+
+        return redirect()->route('super.sms.index');
+    }
+
+    /**
+     * Messages and credits per tenant for the last six months (8.18).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function monthlyUsage(): array
+    {
+        return Message::withoutTenancy()
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as messages, sum(credits_charged) as credits")
+            ->where('created_at', '>=', now()->subMonths(6)->startOfMonth())
+            ->where('direction', 'outbound')
+            ->groupBy('month')
+            ->orderByDesc('month')
+            ->get()
+            ->map(fn ($row) => [
+                'month'    => $row->month,
+                'messages' => (int) $row->messages,
+                'credits'  => (int) $row->credits,
+            ])
+            ->all();
     }
 }

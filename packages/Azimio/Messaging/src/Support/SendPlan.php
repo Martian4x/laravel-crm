@@ -32,6 +32,7 @@ final class SendPlan
         public readonly int $balance,
         public readonly ?CarbonImmutable $deferredUntil = null,
         public readonly ?int $dailyCapRemaining = null,
+        public readonly bool $platformPaused = false,
     ) {
     }
 
@@ -86,12 +87,25 @@ final class SendPlan
     }
 
     /**
+     * Platform sending is paused by a super admin (8.18). Own-provider
+     * tenants are unaffected: it is their credit and their account, not
+     * ours to switch off.
+     */
+    public function isPlatformPaused(): bool
+    {
+        return $this->platformPaused && $this->mode->usesPlatformCredits();
+    }
+
+    /**
      * Everything that must be true before this send may proceed.
+     *
+     * One gate, so a guard added here cannot be forgotten at a call site.
      */
     public function isSendable(): bool
     {
         return $this->hasAnythingToSend()
             && $this->hasSufficientCredits()
-            && ! $this->exceedsDailyCap();
+            && ! $this->exceedsDailyCap()
+            && ! $this->isPlatformPaused();
     }
 }
