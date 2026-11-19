@@ -451,22 +451,36 @@ ssh az1 'ln -sfn /var/www/clients/releases/<TIMESTAMP> /var/www/clients/current 
 
 ### Hostnames and TLS
 
-| Hostname | TLS | Status |
-|---|---|---|
-| `clients.azimio.co.tz` | `*.azimio.co.tz` wildcard (existing) | canonical host |
-| `customers.azimio.co.tz` | `*.azimio.co.tz` wildcard (existing) | 301 → canonical |
-| `clients.co.tz` | **none yet** | HTTP only, 301 → canonical |
+| Hostname | DNS | TLS | Serves |
+|---|---|---|---|
+| `clients.azimio.co.tz` | A → 152.239.123.46, DNS-only | `*.azimio.co.tz` wildcard | the app (canonical on azimio.co.tz) |
+| `clients.co.tz` | A → 152.239.123.46, DNS-only | own cert, expires 2027-02-17 | the app |
+| `www.clients.co.tz` | A → 152.239.123.46, DNS-only | own cert | 301 → `clients.co.tz` |
+| `customers.azimio.co.tz` | **unchanged — still cPanel** | — | see the warning below |
 
-`clients.co.tz` is deliberately HTTP-only in the vhost. Referencing a
-certificate path that does not exist makes `nginx -t` fail, and a failed
-reload would take **every** site on this box down. Issue the certificate
-first, then add its `443` block:
+DNS lives in Cloudflare, records set **DNS-only (grey cloud)**. The origin
+holds valid Let's Encrypt certificates, so proxying adds nothing that is
+needed; turning it on later means setting SSL mode to Full (strict) first,
+or requests will loop.
 
-```bash
-ssh az1 'certbot certonly --webroot -w /var/www/letsencrypt -d clients.co.tz -d www.clients.co.tz'
-```
+Certbot renews `clients.co.tz` automatically. Adding a TLS block for a new
+hostname always goes cert-first: referencing a certificate path that does
+not exist makes `nginx -t` fail, and a failed reload takes **every** site on
+this box down.
 
-That needs `clients.co.tz` to resolve to `152.239.123.46` first.
+> ### ⚠️ `customers.azimio.co.tz` was deliberately NOT repointed
+>
+> That hostname already serves a **separate, live instance of this same
+> CRM** on the cPanel host `65.181.113.174` — the deployment described in
+> the cPanel section above. It answers with an AzimioCustomers login page
+> and sets an `azimiocustomers_session` cookie.
+>
+> Repointing its DNS to az1 would send its users to a different database.
+> Their logins would fail and their data would look deleted, while actually
+> remaining on cPanel.
+>
+> Decide first what should happen to that instance: migrate its data to az1
+> and then repoint, keep both and leave DNS alone, or retire it.
 
 ### Never reload nginx blind
 
