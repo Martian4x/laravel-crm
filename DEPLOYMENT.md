@@ -482,6 +482,61 @@ this box down.
 > Decide first what should happen to that instance: migrate its data to az1
 > and then repoint, keep both and leave DNS alone, or retire it.
 
+### Migrating the old cPanel instance onto az1
+
+The cPanel instance runs this same application at roughly commit `9e769175`:
+it has Phase 7.1/7.3 and none of Phase 8. Fingerprinted over public routes —
+`/register` 200, `/verify` **404**, `/admin/sms/settings` **404**, against
+az1's 200/200/302.
+
+The schema delta is **12 migrations and every one is additive**: 8
+`CREATE TABLE` (the `sms_*` tables) and 4 `ADD COLUMN` on `tenants`/`users`.
+No drops, no renames, no data transformations. So the migration is simply:
+import the dump as it stands, then let `artisan migrate` apply the 12.
+
+Two things make this safe that are worth knowing:
+
+- `2026_11_19_000002` **backfills** existing rows — `tenants.activated_at =
+  created_at` and `users.email_verified_at` set. Without it every migrated
+  user would hit the "verify your email" wall and every company would read
+  as pending.
+- The old instance has **no encrypted columns** (`sms_sender_profiles`
+  is the only `encrypted:` cast and does not exist there), so its `APP_KEY`
+  is *not* needed to read the migrated data. Sessions are the only
+  casualty: inherited session payloads cannot be decrypted under az1's key,
+  so everyone logs in again. Password hashes are bcrypt and unaffected.
+
+**What is needed from the old host** (cPanel → phpMyAdmin → Export, or
+cPanel → Backup → Download a MySQL Database Backup):
+
+1. A full `mysqldump` of the live database — `.sql` or `.sql.gz`.
+2. A tar of `storage/app` (uploaded files, quote PDFs, contact avatars).
+   Without it the data migrates but attachments 404.
+
+Then, on az1:
+
+```bash
+# dry run: validates the dump and writes nothing
+bin/migrate-from-cpanel.sh --dump /root/import/customers.sql.gz
+
+# do it
+bin/migrate-from-cpanel.sh --dump /root/import/customers.sql.gz \
+                           --storage /root/import/storage-app.tar.gz --yes
+```
+
+The script backs up the current database first, refuses a dump that is not
+this application (or is newer than expected), strips the
+`CREATE DATABASE`/`USE`/`DEFINER=` lines a cPanel export carries, takes the
+site into maintenance mode, imports, migrates, and then **asserts every row
+count is unchanged** — all 12 migrations being additive, any drift means a
+migration did something it should not have. On a failure after the import
+begins it deliberately leaves the site **down** rather than serving a
+half-imported schema, and prints the restore command.
+
+**DNS is the last step, not the first.** Verify the migrated data on az1
+through `clients.azimio.co.tz` before repointing `customers.azimio.co.tz`,
+and leave the cPanel instance running until the cutover is confirmed.
+
 ### Never reload nginx blind
 
 nginx on this box serves nine other production sites. Always:
