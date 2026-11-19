@@ -1,55 +1,84 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [azimiocustomers-dev, '2.1']
+  pull_request:
+  # Lets deploy.yml reuse this job, so a deploy cannot skip the suite.
+  workflow_call:
 
 jobs:
   tests:
-    runs-on: ${{ matrix.operating-system }}
+    runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest]
-        php-versions: ["8.3", "8.2"]
+        # 8.4 is the ceiling, not a choice: sabberworm/php-css-parser (dompdf,
+        # used for quote PDFs) declares no support above 8.4, so the locked
+        # tree will not install under 8.5. Production runs 8.4 for the same
+        # reason — see /etc/php/8.4/fpm/pool.d/clients.conf on az1.
+        php: ['8.3', '8.4']
 
-    name: PHP ${{ matrix.php-versions }} test on ${{ matrix.operating-system }}
+    name: PHP ${{ matrix.php }}
 
     services:
       mysql:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: krayin
-        ports:
-          - 3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+          MYSQL_DATABASE: azimio_crm_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php-versions }}
-          extensions: curl, gd, intl, mbstring, openssl, pdo, pdo_mysql, tokenizer, zip
+          php-version: ${{ matrix.php }}
+          extensions: curl, gd, intl, mbstring, openssl, pdo, pdo_mysql, tokenizer, zip, bcmath
           ini-values: error_reporting=E_ALL
           tools: composer:v2
+          coverage: none
 
-      - name: Running Composer Install
-        run: composer install
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ matrix.php }}-
 
-      - name: Set Testing Environment
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Configure environment
         run: |
           cp .env.example .env
-          sed -i "s|^\(APP_ENV=\s*\).*$|\1testing|" .env
-          sed -i "s|^\(DB_HOST=\s*\).*$|\1127.0.0.1|" .env
-          sed -i "s|^\(DB_PORT=\s*\).*$|\1${{ job.services.mysql.ports['3306'] }}|" .env
-          sed -i "s|^\(DB_DATABASE=\s*\).*$|\1krayin|" .env
-          sed -i "s|^\(DB_USERNAME=\s*\).*$|\1root|" .env
-          sed -i "s|^\(DB_PASSWORD=\s*\).*$|\1root|" .env
+          sed -i "s|^APP_ENV=.*|APP_ENV=testing|"            .env
+          sed -i "s|^DB_HOST=.*|DB_HOST=127.0.0.1|"          .env
+          sed -i "s|^DB_PORT=.*|DB_PORT=3306|"               .env
+          sed -i "s|^DB_DATABASE=.*|DB_DATABASE=azimio_crm_test|" .env
+          sed -i "s|^DB_USERNAME=.*|DB_USERNAME=root|"       .env
+          sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=root|"       .env
+          php artisan key:generate
 
-      - name: Running Krayin Installer
-        run: php artisan krayin-crm::install --skip-env-check --skip-admin-creation
+      - name: Install the application
+        run: php artisan krayin-crm:install --skip-env-check --skip-admin-creation
 
-       - name: Running Pest Test
-        run: vendor/bin/pest --parallel --colors=always
+      - name: Seed tenant fixtures
+        # The feature suite is written against the dev tenants
+        # (twiga-traders, kilimanjaro-suppliers) and their admin users. The
+        # tests fail at the first firstOrFail() without these.
+        run: php artisan db:seed --class="Azimio\Tenancy\Database\Seeders\DevTenantSeeder"
+
+      - name: Run tests
+        # Deliberately NOT --parallel. Several suites reset state across
+        # every tenant in afterEach (for example sms_credits), so parallel
+        # workers would clobber each other's fixtures and fail at random.
+        run: vendor/bin/pest --colors=always

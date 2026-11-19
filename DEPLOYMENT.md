@@ -376,6 +376,106 @@ marketing messages, a daily cap) are a sensible starting point, **not legal
 advice**. Confirm your obligations with TCRA and your operator before
 running large campaigns.
 
+
+## Deployed on az1.azimio.co.tz (production)
+
+The CRM runs as its own site on `az1.azimio.co.tz`, alongside the other
+production sites and the **FreeRADIUS** server already on that box. Nothing
+below touches those; the only shared surfaces are nginx, MySQL and cron, and
+each is extended rather than modified.
+
+| Thing | Value |
+|---|---|
+| Code | `/var/www/clients/{releases,current,shared}` (atomic releases) |
+| Served from | `/var/www/clients/current/public` |
+| System user | `clients` |
+| PHP | **8.4** via `/run/php/clients.sock` (pool `/etc/php/8.4/fpm/pool.d/clients.conf`) |
+| nginx | `/etc/nginx/sites-available/clients` |
+| Database | `azimio_clients`, user `azimio_clients@localhost` |
+| Queue worker | `systemctl status clients-queue` |
+| Scheduler | root crontab, `schedule:run` every minute |
+| Logs | `/var/log/nginx/clients.{access,error}.log`, `/var/log/clients-queue.log` |
+
+### Why PHP 8.4 and not 8.5
+
+`sabberworm/php-css-parser` — a dompdf dependency, used to render quote PDFs
+— declares no support above PHP 8.4, so `composer install` refuses to run
+under 8.5. `composer.json` pins `config.platform.php` to `8.4` so local, CI
+and production all resolve against the same version. **Do not "fix" this by
+passing `--ignore-platform-reqs`**: that installs a CSS parser that does not
+support the running PHP, and quote rendering is where it would surface.
+
+### Secrets on the box
+
+| File | Contents |
+|---|---|
+| `/var/www/clients/shared/.env` | app config, `APP_KEY`, DB password (mode 640, owner `clients`) |
+| `/root/.clients-db-pass` | database password (mode 600) |
+| `/root/.clients-admin-pass` | initial super-admin password (mode 600) |
+
+`APP_KEY` is **backup-critical**: SMS provider credentials are encrypted with
+it, so losing it makes every stored credential unrecoverable. Back it up
+separately from the database.
+
+### Deploying
+
+Prefer the GitHub Actions **Deploy** workflow (Actions → Deploy → Run
+workflow, type `deploy` to confirm). It runs the test suite first and will
+not deploy a failing build.
+
+By hand, from a clean checkout:
+
+```bash
+git archive --format=tar HEAD | ssh az1 "cat > /tmp/rel.tar"
+```
+
+```bash
+scp bin/deploy-az1.sh az1:/tmp/ && ssh az1 'bash /tmp/deploy-az1.sh /tmp/rel.tar'
+```
+
+`bin/deploy-az1.sh` builds the new release completely — composer, migrations,
+caches — **before** moving the `current` symlink, then smoke-tests
+`/admin/login` and **rolls back to the previous release automatically** if it
+does not return 200. The last five releases are kept, so a manual rollback is
+just re-pointing the symlink:
+
+```bash
+ssh az1 'ls -1dt /var/www/clients/releases/*/ | head -3'
+```
+
+### Rolling back by hand
+
+```bash
+ssh az1 'ln -sfn /var/www/clients/releases/<TIMESTAMP> /var/www/clients/current && systemctl reload php8.4-fpm && systemctl restart clients-queue'
+```
+
+### Hostnames and TLS
+
+| Hostname | TLS | Status |
+|---|---|---|
+| `clients.azimio.co.tz` | `*.azimio.co.tz` wildcard (existing) | canonical host |
+| `customers.azimio.co.tz` | `*.azimio.co.tz` wildcard (existing) | 301 → canonical |
+| `clients.co.tz` | **none yet** | HTTP only, 301 → canonical |
+
+`clients.co.tz` is deliberately HTTP-only in the vhost. Referencing a
+certificate path that does not exist makes `nginx -t` fail, and a failed
+reload would take **every** site on this box down. Issue the certificate
+first, then add its `443` block:
+
+```bash
+ssh az1 'certbot certonly --webroot -w /var/www/letsencrypt -d clients.co.tz -d www.clients.co.tz'
+```
+
+That needs `clients.co.tz` to resolve to `152.239.123.46` first.
+
+### Never reload nginx blind
+
+nginx on this box serves nine other production sites. Always:
+
+```bash
+ssh az1 'nginx -t && systemctl reload nginx'
+```
+
 ## Upgrading (pulling upstream Krayin fixes)
 
 1. `git fetch upstream && git checkout 2.1 && git merge upstream/2.1` —

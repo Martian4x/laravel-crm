@@ -1,0 +1,80 @@
+name: Deploy
+
+# Deploys to az1.azimio.co.tz. Manual by default: automatic deploys on every
+# push to a shared production box that also serves other sites and a RADIUS
+# server is a decision for a human, not a default. Flip the `push` trigger on
+# once you are happy with it.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to confirm'
+        required: true
+  # push:
+  #   branches: [azimiocustomers-dev]
+
+concurrency:
+  # Two overlapping deploys would race on the current symlink.
+  group: deploy-az1
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check confirmation
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm != 'deploy'
+        run: |
+          echo "::error::Type 'deploy' in the confirm box to run this."
+          exit 1
+
+  test:
+    # Never deploy something the suite has not passed.
+    needs: guard
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load SSH key
+        # AZ1_SSH_KEY   — private key whose public half is in root's
+        #                 authorized_keys on az1
+        # AZ1_HOST      — az1.azimio.co.tz
+        # AZ1_USER      — root
+        # AZ1_KNOWN_HOSTS — output of `ssh-keyscan az1.azimio.co.tz`
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.AZ1_SSH_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "${{ secrets.AZ1_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Ship the committed tree
+        # git archive, not rsync: it sends exactly what is committed, so a
+        # stray local file or an uncommitted edit can never reach production.
+        run: |
+          git archive --format=tar HEAD > release.tar
+          scp -i ~/.ssh/id_deploy release.tar \
+            "${{ secrets.AZ1_USER }}@${{ secrets.AZ1_HOST }}:/tmp/release-${{ github.sha }}.tar"
+          scp -i ~/.ssh/id_deploy bin/deploy-az1.sh \
+            "${{ secrets.AZ1_USER }}@${{ secrets.AZ1_HOST }}:/tmp/deploy-${{ github.sha }}.sh"
+
+      - name: Run the deploy
+        # The script migrates and builds the release before flipping the
+        # live symlink, smoke-tests the login page, and rolls back to the
+        # previous release if that smoke test does not return 200.
+        run: |
+          ssh -i ~/.ssh/id_deploy \
+            "${{ secrets.AZ1_USER }}@${{ secrets.AZ1_HOST }}" \
+            "bash /tmp/deploy-${{ github.sha }}.sh /tmp/release-${{ github.sha }}.tar && rm -f /tmp/deploy-${{ github.sha }}.sh"
+
+      - name: Verify it is serving
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' https://clients.azimio.co.tz/admin/login || echo 000)
+          echo "clients.azimio.co.tz/admin/login -> $code"
+          test "$code" = "200"
