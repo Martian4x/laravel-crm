@@ -727,7 +727,18 @@ unless there is a reason to revisit, and record the reason here if so.
       Confirm step before anything is submitted. Failure handling follows the
       8.0.6 two-branch rule, and the per-segment cost (8.0.1) is spelled out in
       the summary so a long body never surprises anyone at confirmation time.
-- [ ] 8.9 **Templates CRUD** with merge fields (`{{person.first_name}}`,
+- [x] 8.9 **Templates CRUD** — **DONE.** `TemplateController` (index, create,
+      store, edit, update, destroy, preview), two views, `sms.templates` ACL
+      key + menu entry, en/sw. 6 tests.
+      **Platform templates are refused explicitly, not silently.**
+      `BelongsToTenant` already blocks the write (Phase 6.1), but relying on
+      its `return false` would leave a user clicking Save and seeing nothing
+      happen — so edit/update/destroy check `isPlatformDefault()` and refuse
+      with a reason. Tested on all three.
+      **The list shows each template segment count**, from the same counter
+      the pipeline bills with: a template is reused many times, so one
+      careless extra segment is a recurring charge rather than a one-off.
+      Original scope for reference: with merge fields (`{{person.first_name}}`,
       `{{lead.title}}`, `{{user.name}}`, `{{tenant.name}}`, …), category, and a
       preview. Platform templates (`tenant_id = NULL`) are read-only for tenants,
       per the Phase 6.1 guard.
@@ -763,7 +774,25 @@ unless there is a reason to revisit, and record the reason here if so.
       CSV export; batch detail page with per-recipient breakdown and a **retry
       failed** action. Sent messages also land on the person/lead **activity
       timeline** so the SMS history sits with the rest of the conversation.
-- [ ] 8.11 **Opt-out management.** Opt-out list UI (add/remove/import), automatic
+- [x] 8.11 **Opt-out management.** **DONE.** `OptOutController` (index,
+      store, import, export, destroy), one view, `sms.opt_outs` ACL key +
+      menu entry, en/sw. 7 tests.
+      **Everything entering the list is normalised**, including imports —
+      that is the whole point. A suppression stored as `0712 345 678` would
+      not match a send addressed to `+255712345678`, and the contact would be
+      messaged anyway. Tested, including that two spellings of one number
+      collapse to a single row rather than tripping the unique index.
+      **Import reports what happened to each line** (added / already there /
+      unreadable) and hands back the unreadable ones so a user can fix their
+      list instead of guessing.
+      **Removal is deliberately possible**: a number added by mistake, or a
+      customer asking to come back, has to be fixable. The SMS log still
+      records every message ever sent.
+      Cross-tenant isolation tested: one company never sees another list.
+      **Still pending:** the auto-appended unsubscribe notice on marketing
+      bodies (config key exists, not yet injected at send time) and
+      `STOP`/`ACHA` handling, which needs inbound (8.19).
+      Original scope for reference: Opt-out list UI (add/remove/import), automatic
       suppression at send time, and an unsubscribe instruction auto-appended to
       `marketing`-category messages (configurable text, en/sw). Honours
       `STOP`/`ACHA` replies once inbound is live (8.19).
@@ -960,7 +989,7 @@ unless there is a reason to revisit, and record the reason here if so.
 **Suggested order:** ~~8.0~~ → ~~8.1~~ → ~~8.2~~ → ~~8.3 (drivers)~~ →
 ~~8.4~~ → ~~8.5~~ → ~~8.6~~ → ~~8.7~~ → ~~8.10~~ → ~~8.14~~ → ~~8.15 (credits)~~ →
 ~~8.13 + 8.16~~ → ~~8.8 (bulk)~~ → ~~8.17 (dropped by decision)~~ →
-**8.9 (next — templates CRUD)** →
+~~8.9 (templates)~~ → ~~8.11 (opt-outs)~~ → **8.12 (next — quiet hours)** →
 8.10 → 8.14 →
 8.15 → 8.17 → 8.8 → 8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 →
 8.22–8.26 continuously, not at the end.

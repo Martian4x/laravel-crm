@@ -3,9 +3,60 @@
 return [
     'name' => 'Messaging',
 
+    'compose-body' => 'Message',
+
+    /**
+     * Templates (8.9).
+     */
+    'templates' => [
+        'title'       => 'SMS Templates',
+        'new'         => 'New template',
+        'edit'        => 'Edit',
+        'delete'      => 'Delete',
+        'save'        => 'Save template',
+        'name'        => 'Name',
+        'locale'      => 'Language',
+        'any-locale'  => 'Any language',
+        'platform'    => 'Platform',
+        'read-only'   => 'Read-only',
+        'none'        => 'No templates yet.',
+        'created'     => 'Template created.',
+        'updated'     => 'Template updated.',
+        'deleted'     => 'Template deleted.',
+        'confirm-delete' => 'Delete this template?',
+        'platform-read-only' => 'Platform templates are shared with every company and cannot be changed here.',
+        'cost-note'   => 'The segment count shown in the list is what each send of this template will cost per recipient. A template is reused many times, so one extra segment is a recurring charge.',
+    ],
+
+    /**
+     * Opt-outs (8.11).
+     */
+    'opt-outs' => [
+        'title'        => 'Opt-outs',
+        'help'         => 'Numbers on this list are excluded from every send automatically. The list belongs to your company only — it does not affect any other company using AzimioCustomers.',
+        'add-title'    => 'Add a number',
+        'add'          => 'Add',
+        'import-title' => 'Import a list',
+        'import'       => 'Import',
+        'remove'       => 'Remove',
+        'reason'       => 'Reason (optional)',
+        'source'       => 'Added by',
+        'source-manual'     => 'Added by hand',
+        'source-import'     => 'Imported',
+        'source-stop_reply' => 'Replied STOP',
+        'none'         => 'No opt-outs. Every number is currently reachable.',
+        'added'        => ':number will no longer receive messages.',
+        'removed'      => ':number can be messaged again.',
+        'imported'     => 'Imported: :added added, :skipped already on the list, :invalid could not be read.',
+        'invalid-lines' => 'These lines could not be read as phone numbers and were skipped:',
+        'confirm-remove' => 'Allow messages to this number again?',
+    ],
+
     'acl' => [
-        'sms'      => 'Messaging',
-        'create'   => 'Send SMS',
+        'sms'       => 'Messaging',
+        'create'    => 'Send SMS',
+        'templates' => 'SMS Templates',
+        'opt-outs'  => 'Opt-outs',
         'bulk'     => 'Bulk SMS',
         'credits'  => 'SMS Credits',
         'logs'     => 'SMS Log',

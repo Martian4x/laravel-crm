@@ -317,6 +317,18 @@ return [
         'sort'       => 3,
         'icon-class' => 'icon-dollar',
     ], [
+        'key'        => 'sms.templates',
+        'name'       => 'messaging::app.templates.title',
+        'route'      => 'admin.sms.templates.index',
+        'sort'       => 4,
+        'icon-class' => 'icon-settings',
+    ], [
+        'key'        => 'sms.opt_outs',
+        'name'       => 'messaging::app.opt-outs.title',
+        'route'      => 'admin.sms.opt-outs.index',
+        'sort'       => 5,
+        'icon-class' => 'icon-settings',
+    ], [
         'key'        => 'sms.logs',
         'name'       => 'messaging::app.sms.log.title',
         'route'      => 'admin.sms.log.index',

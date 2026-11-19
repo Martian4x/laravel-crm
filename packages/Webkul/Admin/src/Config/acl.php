@@ -586,6 +586,30 @@ return [
         ],
         'sort'  => 3,
     ], [
+        'key'   => 'sms.templates',
+        'name'  => 'messaging::app.acl.templates',
+        'route' => [
+            'admin.sms.templates.index',
+            'admin.sms.templates.create',
+            'admin.sms.templates.store',
+            'admin.sms.templates.preview',
+            'admin.sms.templates.edit',
+            'admin.sms.templates.update',
+            'admin.sms.templates.destroy',
+        ],
+        'sort'  => 4,
+    ], [
+        'key'   => 'sms.opt_outs',
+        'name'  => 'messaging::app.acl.opt-outs',
+        'route' => [
+            'admin.sms.opt-outs.index',
+            'admin.sms.opt-outs.store',
+            'admin.sms.opt-outs.import',
+            'admin.sms.opt-outs.export',
+            'admin.sms.opt-outs.destroy',
+        ],
+        'sort'  => 5,
+    ], [
         'key'   => 'sms.logs',
         'name'  => 'messaging::app.acl.logs',
         'route' => [

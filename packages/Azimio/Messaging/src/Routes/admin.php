@@ -4,7 +4,9 @@ use Azimio\Messaging\Http\Controllers\Admin\BulkController;
 use Azimio\Messaging\Http\Controllers\Admin\ComposeController;
 use Azimio\Messaging\Http\Controllers\Admin\CreditRequestController;
 use Azimio\Messaging\Http\Controllers\Admin\MessageLogController;
+use Azimio\Messaging\Http\Controllers\Admin\OptOutController;
 use Azimio\Messaging\Http\Controllers\Admin\SmsSettingsController;
+use Azimio\Messaging\Http\Controllers\Admin\TemplateController;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -72,6 +74,44 @@ Route::prefix('sms')->group(function () {
 
     Route::post('bulk/send', [BulkController::class, 'send'])
         ->name('admin.sms.bulk.send');
+
+    // Templates (8.9).
+    Route::get('templates', [TemplateController::class, 'index'])
+        ->name('admin.sms.templates.index');
+
+    Route::get('templates/create', [TemplateController::class, 'create'])
+        ->name('admin.sms.templates.create');
+
+    Route::post('templates', [TemplateController::class, 'store'])
+        ->name('admin.sms.templates.store');
+
+    Route::post('templates/preview', [TemplateController::class, 'preview'])
+        ->name('admin.sms.templates.preview');
+
+    Route::get('templates/{id}/edit', [TemplateController::class, 'edit'])
+        ->name('admin.sms.templates.edit');
+
+    Route::put('templates/{id}', [TemplateController::class, 'update'])
+        ->name('admin.sms.templates.update');
+
+    Route::delete('templates/{id}', [TemplateController::class, 'destroy'])
+        ->name('admin.sms.templates.destroy');
+
+    // Opt-outs (8.11).
+    Route::get('opt-outs', [OptOutController::class, 'index'])
+        ->name('admin.sms.opt-outs.index');
+
+    Route::post('opt-outs', [OptOutController::class, 'store'])
+        ->name('admin.sms.opt-outs.store');
+
+    Route::post('opt-outs/import', [OptOutController::class, 'import'])
+        ->name('admin.sms.opt-outs.import');
+
+    Route::get('opt-outs/export', [OptOutController::class, 'export'])
+        ->name('admin.sms.opt-outs.export');
+
+    Route::delete('opt-outs/{id}', [OptOutController::class, 'destroy'])
+        ->name('admin.sms.opt-outs.destroy');
 
     // Credit balance and requests (8.13).
     Route::get('credits', [CreditRequestController::class, 'index'])
