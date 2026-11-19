@@ -1,6 +1,15 @@
 <?php
 
 return [
+    'onboarding' => [
+        'title'             => 'Kamilisha usanidi wa :company',
+        'progress'          => ':done kati ya :total zimekamilika',
+        'dismiss'           => 'Ficha hii',
+        'step-logo'         => 'Pakia nembo ya kampuni yako',
+        'step-company-info' => 'Ongeza TIN na VRN kwa nukuu',
+        'step-team'         => 'Waalike wenzako',
+        'step-first-lead'   => 'Tengeneza lead yako ya kwanza',
+    ],
     'verify' => [
         'title'             => 'Thibitisha barua pepe yako',
         'help'              => 'Tumetuma kiungo cha uthibitisho kwa :email. Ulifungue ili kukamilisha usanidi wa kampuni yako.',

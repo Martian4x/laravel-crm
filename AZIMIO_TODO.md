@@ -307,7 +307,29 @@ scoped to be done one by one, in the suggested order at the end.
 
 ### B. First login & onboarding
 
-- [ ] 7.6 **Onboarding checklist card** on the tenant dashboard until completed/
+- [x] 7.6 **Onboarding checklist card** — **DONE.** `OnboardingChecklist`
+      service, a card partial, a dismiss route, en/sw. 7 tests.
+      **Every step is DERIVED from real data, never from a stored "done"
+      flag.** The card cannot claim something is finished when it is not,
+      and a step un-ticks itself if whatever satisfied it is removed — a
+      flag would drift the first time somebody deleted their logo. Steps:
+      logo uploaded, TIN set (the field the TRA actually asks for), a second
+      user invited, and a first lead created.
+      **Injected through Krayin's own `view_render_event` hook** rather than
+      by editing the dashboard view, so an upstream merge cannot drop it or
+      conflict with it.
+      Hidden when every step is done **or** when dismissed: finishing should
+      make it vanish by itself, and somebody who does not want it should not
+      have to finish it to be rid of it. The dismissal lives in
+      tenant-scoped `core_config` (3.8), so one company hiding it does not
+      hide it from everybody — tested.
+      **Bug found by the tests:** Krayin's `core_config` is just
+      `(code, value)` with no `channel_code`/`locale_code` columns, and
+      `core()->getConfigData()` caches per request and falls back to file
+      config — neither correct for a per-tenant flag written in the same
+      request. The flag is read straight from the table instead.
+      Original scope for reference:
+- [ ] (original) 7.6 **Onboarding checklist card** on the tenant dashboard until completed/
       dismissed: upload your logo → set Company Information (TIN/VRN) → invite
       your team → create your first lead. Each step links to the right page.
 - [x] 7.7 **Super admin landing**: after login, super admins are redirected to
@@ -463,8 +485,12 @@ scoped to be done one by one, in the suggested order at the end.
       (FK cascades already wipe child rows); confirmation flow in the super
       panel and file-storage cleanup for the tenant's uploads.
 
-**Suggested order:** 7.8 (small, unblocks admin daily work) → 7.7 → 7.10 →
-7.3 → 7.1 → 7.2 → 7.4 → 7.5 → 7.6 → 7.9 → 7.11 → 7.12 → 7.13.
+**Status (2026-11-19): Phase 7 is complete except 7.11**, which needs a
+person rather than more code — see the note on that item for exactly what
+the automated suite does and does not cover.
+
+Original suggested order: 7.8 → 7.7 → 7.10 → 7.3 → 7.1 → 7.2 → 7.4 → 7.5 →
+7.6 → 7.9 → 7.11 → 7.12 → 7.13.
 Rationale: fix the sharp edges super admins hit today first, then the
 registration funnel in dependency order (terms before the page, verification
 before opening it up), then lifecycle.
@@ -1336,8 +1362,12 @@ day-one use case).
 **Current state (2026-11-19):** Phases 0–4, 6 and **8 are done**; 5 and 7
 have the open items marked above. Phase 8 superseded 5.3 entirely.
 
-Next most valuable, now that messaging is complete: **7.2** (email
-verification, which gates the registration funnel), **7.9** (plan editing in
-the super panel), **7.11** (the human click-through regression carried from
-6.1), then **7.12 / 7.13** (tenant export and deletion, both promised by the
-DEPLOYMENT.md data-residency statement).
+**Phases 0–8 are now done**, apart from two things that are not code:
+**7.11**, the human click-through regression (needs a person), and the three
+pre-launch items at the top of Phase 8 (reconcile Beem segment billing
+against a real invoice, confirm TCRA rules, ask Beem for an inbound
+verification method).
+
+Everything still open is deferred by choice: **8.21** (SMS nice-to-haves),
+**5.6** (low-bandwidth audit), the Phase 5 refinements, and a native
+Swahili review of the newer strings.

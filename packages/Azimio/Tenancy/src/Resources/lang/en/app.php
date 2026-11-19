@@ -1,6 +1,15 @@
 <?php
 
 return [
+    'onboarding' => [
+        'title'             => 'Finish setting up :company',
+        'progress'          => ':done of :total done',
+        'dismiss'           => 'Hide this',
+        'step-logo'         => 'Upload your company logo',
+        'step-company-info' => 'Add your TIN and VRN for quotes',
+        'step-team'         => 'Invite your team',
+        'step-first-lead'   => 'Create your first lead',
+    ],
     'verify' => [
         'title'             => 'Confirm your email address',
         'help'              => 'We have sent a confirmation link to :email. Open it to finish setting up your company.',

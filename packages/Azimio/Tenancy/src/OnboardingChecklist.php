@@ -70,9 +70,18 @@ class OnboardingChecklist
         return ! $this->isComplete($tenant) && ! $this->isDismissed();
     }
 
+    /**
+     * Read straight from the table rather than core()->getConfigData(),
+     * which caches per request and falls back to file config — neither of
+     * which is right for a per-tenant flag that may have been written in
+     * this same request.
+     */
     public function isDismissed(): bool
     {
-        return (bool) core()->getConfigData(self::DISMISS_KEY);
+        return CoreConfig::query()
+            ->where('code', self::DISMISS_KEY)
+            ->where('value', '1')
+            ->exists();
     }
 
     /**
@@ -81,10 +90,23 @@ class OnboardingChecklist
      */
     public function dismiss(): void
     {
-        CoreConfig::query()->updateOrCreate(
-            ['code' => self::DISMISS_KEY, 'channel_code' => null, 'locale_code' => null],
-            ['value' => '1'],
-        );
+        // core_config in Krayin is just (code, value) — no channel or
+        // locale columns — and tenant_id is stamped by BelongsToTenant.
+        $existing = CoreConfig::query()->where('code', self::DISMISS_KEY)->first();
+
+        if ($existing) {
+            $existing->forceFill(['value' => '1'])->save();
+
+            return;
+        }
+
+        $config = new CoreConfig;
+
+        $config->forceFill([
+            'code'      => self::DISMISS_KEY,
+            'value'     => '1',
+            'tenant_id' => tenant_id(),
+        ])->save();
     }
 
     private function hasConfig(string $key): bool

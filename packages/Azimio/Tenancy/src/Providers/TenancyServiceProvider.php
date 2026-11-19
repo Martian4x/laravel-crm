@@ -54,6 +54,15 @@ class TenancyServiceProvider extends ServiceProvider
 
         Event::listen('datagrid.*', ScopeDataGridToTenant::class);
 
+        /**
+         * 7.6: the first-login checklist, injected through Krayin's own
+         * view_render_event hook rather than by editing the dashboard
+         * view — so an upstream merge cannot drop it or conflict with it.
+         */
+        Event::listen('admin.dashboard.index.header.after', function ($manager) {
+            $manager->addTemplate('azimio::partials.onboarding');
+        });
+
         $this->propagateTenantToQueue();
 
         /**
@@ -137,6 +146,13 @@ class TenancyServiceProvider extends ServiceProvider
 
                 Route::delete('users/{id}', [UserController::class, 'destroy'])->name('super.users.destroy');
             });
+
+        // 7.6: dismissing the onboarding checklist. Needs tenant context,
+        // since the flag is stored in tenant-scoped core_config.
+        Route::middleware(['web', 'user', 'tenant', 'admin_locale'])
+            ->prefix(config('app.admin_path'))
+            ->post('onboarding/dismiss', [\Azimio\Tenancy\Http\Controllers\OnboardingController::class, 'dismiss'])
+            ->name('azimio.onboarding.dismiss');
 
         // Reachable while impersonating a tenant user, hence no super_admin middleware.
         Route::middleware(['web', 'user'])
