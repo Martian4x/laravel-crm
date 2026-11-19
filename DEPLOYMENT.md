@@ -225,6 +225,157 @@ php artisan inbound-emails:process
   retained 14 days"). TZ organizations commonly ask; keep the statement in
   your contract template.
 
+## Text Messaging (SMS)
+
+The SMS module (`packages/Azimio/Messaging`) lets each company send either on
+its **own provider account** or on the platform's **AZIMIOCRM** account using
+credits you allocate. Both modes share one sending pipeline, so opt-outs,
+quiet hours, segment counting and the message log apply to every send
+however it was triggered.
+
+### Before you go live
+
+1. **Register the `AZIMIOCRM` sender ID with the mobile operators** through
+   your Beem account. An unregistered sender ID is rejected on every send.
+2. **Create the platform sender account**: sign in as a super admin →
+   **Tenants → SMS** → *Platform sender account*. Enter the Beem API key and
+   secret. Leave either field blank on a later edit to keep the stored value.
+3. **Allocate credits** to a company before it can send in platform mode. A
+   note is required on every movement — it is your evidence in a billing
+   dispute.
+
+### Environment
+
+```bash
+AZIMIO_SMS_DRIVER=log          # 'log' writes to the log and sends nothing — use in staging
+AZIMIO_SMS_PLATFORM_SENDER=AZIMIOCRM
+AZIMIO_SMS_PLATFORM_DRIVER=beem
+BEEM_API_KEY=
+BEEM_SECRET_KEY=
+AZIMIO_SMS_WEBHOOKS=false      # inbound callbacks; see "Inbound SMS" below
+AZIMIO_SMS_WEBHOOK_SECRET=
+```
+
+> **Keep `AZIMIO_SMS_DRIVER=log` in staging.** It exercises the whole
+> pipeline — reservations, settlement, delivery status — without contacting a
+> network or spending a single credit.
+
+### ⚠️ `APP_KEY` is now backup-critical
+
+Provider credentials are **encrypted at rest** in
+`sms_sender_profiles.credentials` using Laravel's encrypter, which derives
+its key from `APP_KEY`.
+
+**If you lose `APP_KEY`, every stored credential becomes unrecoverable** —
+not degraded, gone — and every company with its own provider will have to
+re-enter its API secret. Back `APP_KEY` up separately from the database, and
+never rotate it without first re-saving every sender profile.
+
+### Required processes
+
+The queue worker and scheduler in **Required processes** above are not
+optional for SMS:
+
+- **Queue worker** — sends are queued (`SendSmsJob`). With no worker,
+  messages sit at `queued` forever and nothing is delivered.
+- **Scheduler** — drives three commands the module registers itself:
+
+| Command | Frequency | Purpose |
+|---|---|---|
+| `azimio:sms:poll-delivery-reports` | every 10 min | Beem has **no delivery callback**; status is polled |
+| `azimio:sms:notify-low-balance` | daily 08:30 | warns companies before sends start failing |
+| `azimio:sms:check-failure-rate` | hourly | alerts you when a company's sends start failing |
+
+```bash
+# Run any of them by hand:
+php artisan azimio:sms:poll-delivery-reports --limit=500
+php artisan azimio:sms:notify-low-balance --force
+php artisan azimio:sms:check-failure-rate --hours=6 --threshold=25
+```
+
+**Mind the polling cost.** Beem's delivery-report endpoint takes one
+`(request_id, dest_addr)` pair per call, so a 10,000-recipient campaign is
+10,000 requests. The command only polls non-terminal messages, waits five
+minutes after submission, gives up after
+`messaging.delivery_reports.max_age_hours` (default 48), and caps each run
+with `--limit`.
+
+### Inbound SMS — read before enabling
+
+Inbound/two-way SMS is a **separate Beem product** needing a two-way number,
+and **Beem documents no signature or HMAC scheme for its callbacks**. A
+request arriving at the inbound route therefore cannot be proven to come
+from Beem.
+
+The route is **disabled by default** (`AZIMIO_SMS_WEBHOOKS=false`). If you
+enable it:
+
+- set `AZIMIO_SMS_WEBHOOK_SECRET` and configure Beem to send it as the
+  `X-Azimio-Secret` header;
+- restrict the endpoint at the network or web-server level if you can;
+- the URL to register with Beem is `https://<your-host>/messaging/webhook/inbound`;
+- **ask Beem for a real verification method** before trusting it in
+  production.
+
+Every payload is logged to `sms_webhook_events` before it is trusted,
+rejected ones included — a run of rejections is what a forged-callback
+attempt looks like. Replies of `STOP`, `ACHA`, `SITAKI` or `UNSUBSCRIBE`
+automatically add the sender to that company's opt-out list.
+
+### ⚠️ Reconcile credit billing against a real Beem invoice
+
+One credit is **one SMS segment**, because that is how Beem bills. But
+**Beem does not document how it counts segments on `/v1/send`** — the
+GSM-7 160/153 and UCS-2 70/67 figures this module uses come from their
+*Multicountry* product, a different API.
+
+**Before you bill anyone per segment**, send a known mix of messages (short,
+long, and one containing a non-GSM character such as a curly quote or
+emoji), then compare the module's `credits_charged` totals against the Beem
+invoice for the same period. Adjust `messaging.segments` if they disagree.
+
+### Credit reconciliation runbook
+
+`sms_credit_ledger` is the truth; `tenants.sms_credits` is a cache of it.
+Drift between them is normally an **abandoned reservation** — a send that
+died between reserving its credits and settling them.
+
+1. Super admin → **Tenants → SMS**. The table flags any company whose cached
+   and ledger balances disagree.
+2. Open that company's **Ledger** and press **Reconcile from ledger**.
+3. The cache is recomputed from the ledger, which **returns the stranded
+   credits to the company** — drift always resolves in their favour, which
+   is the right way to fail for something they paid for.
+
+Reconciling is safe to run at any time and changes nothing when the figures
+already agree.
+
+### Pausing all platform sending
+
+Super admin → **Tenants → SMS** → **Pause platform sending**. This stops
+every send that uses platform credits.
+
+Companies on their **own** provider keep sending — it is their credit and
+their provider account, not yours to switch off.
+
+### Per-company settings
+
+Each company controls its own, under **Settings → SMS**:
+
+- provider mode (own account or platform credits), with credentials verified
+  against the provider before the profile goes active;
+- quiet hours and a daily send cap — blank means "use the platform default";
+- its opt-out list, which is **per company**: opting out of one company's
+  messages does not silence another.
+
+### Tanzania compliance
+
+Bulk sender IDs are subject to **TCRA and mobile-operator rules**. The
+defaults shipped here (quiet hours 21:00–08:00, an unsubscribe notice on
+marketing messages, a daily cap) are a sensible starting point, **not legal
+advice**. Confirm your obligations with TCRA and your operator before
+running large campaigns.
+
 ## Upgrading (pulling upstream Krayin fixes)
 
 1. `git fetch upstream && git checkout 2.1 && git merge upstream/2.1` —
@@ -250,3 +401,15 @@ php artisan inbound-emails:process
 - [ ] Create a lead in tenant A, confirm invisible in tenant B
 - [ ] Quote PDF shows the tenant's company info (TIN/VRN)
 - [ ] Queued mail carries tenant branding (send a test workflow mail)
+- [ ] `APP_KEY` is backed up **separately from the database** (encrypted SMS
+      provider credentials cannot be recovered without it)
+- [ ] Platform sender account saved and `AZIMIOCRM` registered with the operators
+- [ ] Credits allocated to at least one company, and its ledger shows the movement
+- [ ] Queue worker running — send a test SMS from Settings → SMS and confirm it
+      leaves `queued`
+- [ ] Scheduler running — `php artisan schedule:list` shows the three
+      `azimio:sms:*` commands
+- [ ] Opt-out honoured: add your own number to a company's opt-out list and
+      confirm a send to it is excluded at the confirmation step
+- [ ] Credit billing reconciled against a real Beem invoice (see the warning
+      in the SMS section) **before charging anyone per segment**

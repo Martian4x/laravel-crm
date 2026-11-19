@@ -335,9 +335,26 @@ before opening it up), then lifecycle.
 
 ---
 
-## Phase 8 — Text Messaging (SMS) Module  ⚡ **CURRENT PRIORITY**
+## Phase 8 — Text Messaging (SMS) Module  ✅ **COMPLETE** (v1)
 
-Added 2026-11-12. Supersedes the one-line 5.3 placeholder.
+Added 2026-11-12, completed 2026-11-19. Supersedes the one-line 5.3
+placeholder. Everything except 8.21 (explicitly deferred) is done and
+tested; 8.17 was dropped by decision.
+
+**Three things to settle before this bills real money:**
+
+1. **Reconcile per-segment charging against a real Beem invoice.** Beem does
+   not document how it counts segments on `/v1/send`; our figures come from
+   their Multicountry product, a different API. See 8.0.1 and 8.26.
+2. **Confirm TCRA / operator rules** for bulk sender IDs. The shipped quiet
+   hours, unsubscribe notice and daily cap are a sensible starting point, not
+   legal advice. See 8.12.
+3. **Ask Beem for an inbound-callback verification method** before enabling
+   that route. They define none, so the route ships disabled. See 8.19.
+
+Smaller follow-ups: wire the three specific notification triggers (8.20),
+per-user staff alert SMS (needs a phone column on `users`), and a native
+Swahili review of the module strings (8.24).
 
 ### Goal
 
@@ -1077,25 +1094,84 @@ unless there is a reason to revisit, and record the reason here if so.
 
 ### E. Cross-cutting (do not skip — Phase 3/6 lessons)
 
-- [ ] 8.22 **Tenant isolation**: add every new table to `TenantTables` (strict vs
+- [x] 8.22 **Tenant isolation** — **DONE, continuously.** All nine SMS tables
+      registered in `TenantTables` (8.2); `BelongsToTenant` on every model
+      except `WebhookEvent`, which is platform-only by design;
+      `TenantTables::PLATFORM_ONLY` added for it.
+      **The new grids avoid the `ScopeDataGridToTenant` dependency entirely**
+      by using Eloquent rather than raw `DB::table()` (8.10), so they cannot
+      leak by construction rather than by remembering a listener.
+      Cross-tenant isolation is asserted in `SmsSchemaTest`,
+      `SmsCreditLedgerTest`, `SmsBulkTest`, `SmsTemplateOptOutTest`,
+      `SmsPlatformAdminTest` and `SmsCreditRequestTest` — including the two
+      that would cost money: a tenant cannot allocate itself credits, and a
+      tenant cannot approve its own credit request.
+      **Two knock-ons from making `sms_sender_profiles` STRICT were found and
+      fixed:** `azimio:tenant:adopt` would have hijacked the platform profile
+      (8.2), and `$batch->senderProfile` returned null for every platform
+      send (8.5).
+- [ ] (original) 8.22 **Tenant isolation**: add every new table to `TenantTables` (strict vs
       shared as listed in 8.2), apply `BelongsToTenant` to every model, and verify
       the `ScopeDataGridToTenant` listener covers the new grids (they use raw
       `DB::table()` like all the others). **No tenant may ever read, send from, or
       bill against another tenant's sender profile, credits, log or opt-out list.**
-- [ ] 8.23 **ACL + menu**: `sms` ACL keys (`sms`, `sms.create`, `sms.bulk`,
+- [x] 8.23 **ACL + menu** — **DONE, continuously.** Seven ACL keys added as
+      each screen landed: `sms`, `sms.create`, `sms.bulk`, `sms.credits`,
+      `sms.templates`, `sms.opt_outs`, `sms.logs`, `sms.settings`, each
+      listing every route it guards. Matching **Messaging** menu with
+      sub-items, plus an **SMS** tab in the super panel.
+      This is the split the item asked for: a company can give an agent
+      single-send rights (`sms.create`) without bulk sends (`sms.bulk`) or
+      access to the provider credentials (`sms.settings`).
+- [ ] (original) 8.23 **ACL + menu**: `sms` ACL keys (`sms`, `sms.create`, `sms.bulk`,
       `sms.templates`, `sms.settings`, `sms.logs`) in
       `packages/Webkul/Admin/src/Config/acl.php`, and a top-level **Messaging** menu
       entry in `menu.php` with sub-items — so a tenant can give an agent single-send
       rights without bulk-send or settings.
-- [ ] 8.24 **en + sw translations** for every string, including provider error
+- [x] 8.24 **en + sw translations** — **DONE, continuously.** Every string in
+      the module exists in both locales, added with the feature rather than
+      retrofitted: UI, validation, flash messages, mail templates, provider
+      error messages surfaced to users, and the five phone-rejection reasons.
+      Swahili written as the primary voice per 5.7, not glossed from English.
+      **Still worth a native-speaker review** before launch, same caveat as
+      2.3 — these are competent translations, not reviewed ones.
+- [ ] (original) 8.24 **en + sw translations** for every string, including provider error
       messages surfaced to users (Swahili first, per 5.7).
-- [ ] 8.25 **Tests**: segment counting and phone normalization (unit); credit
+- [x] 8.25 **Tests** — **DONE, continuously.** 13 SMS test files, part of the
+      244-test / 728-assertion suite. Everything the item asked for is
+      covered: segment counting and phone normalization (unit-style), credit
+      ledger arithmetic **including the refund rule and the concurrent-send
+      double-spend**, cross-tenant isolation for profiles/credits/log/
+      opt-outs, opt-out and quiet-hours suppression, the `LogDriver`
+      end-to-end send, and super-panel allocation and approval access
+      control.
+      **Webhook signature rejection** is tested as far as it can be: Beem
+      defines no signature scheme (8.19), so the test covers the shared
+      secret this module adds instead.
+      The tests have been earning their place — they caught the
+      `$batch->senderProfile` platform bug (8.5), the trailing-slash and
+      swallowed-exception bugs in `BeemDriver` (8.3), the nested-Blade render
+      error (8.7), and a repeat of the nullable-key crash (8.8).
+- [ ] (original) 8.25 **Tests**: segment counting and phone normalization (unit); credit
       ledger arithmetic including the refund rule and concurrent-send double-spend
       (feature); cross-tenant isolation for profiles/credits/log/opt-outs; opt-out
       and quiet-hours suppression; webhook signature rejection; the `LogDriver`
       end-to-end send; super-panel allocation and approval access control.
       Extends the Phase 3.14 isolation suite rather than standing apart from it.
-- [ ] 8.26 **Docs**: DEPLOYMENT.md gets the SMS section — provider setup, sender-ID
+- [x] 8.26 **Docs** — **DONE.** DEPLOYMENT.md gains a Text Messaging section
+      and nine SMS items on the post-deploy checklist.
+      Covers: provider setup and sender-ID registration, the environment
+      block, **`APP_KEY` as backup-critical** (lose it and every stored
+      credential is unrecoverable), the queue worker and the three scheduled
+      commands with a table and the reason polling exists at all, the
+      per-recipient polling cost, inbound webhooks with the warning that Beem
+      defines no signature scheme, the credit reconciliation runbook, the
+      kill switch, per-company settings, and the TCRA note.
+      **Two warnings are deliberately prominent** rather than buried: back up
+      `APP_KEY` separately, and **reconcile credit billing against a real
+      Beem invoice before charging anyone per segment**, because Beem does
+      not document how it counts segments on `/v1/send`.
+- [ ] (original) 8.26 **Docs**: DEPLOYMENT.md gets the SMS section — provider setup, sender-ID
       registration steps, webhook URLs to whitelist, the queue worker requirement
       for sending, `APP_KEY` warning for encrypted credentials, and the credit
       reconciliation runbook.
@@ -1103,7 +1179,7 @@ unless there is a reason to revisit, and record the reason here if so.
 **Suggested order:** ~~8.0~~ → ~~8.1~~ → ~~8.2~~ → ~~8.3 (drivers)~~ →
 ~~8.4~~ → ~~8.5~~ → ~~8.6~~ → ~~8.7~~ → ~~8.10~~ → ~~8.14~~ → ~~8.15 (credits)~~ →
 ~~8.13 + 8.16~~ → ~~8.8 (bulk)~~ → ~~8.17 (dropped by decision)~~ →
-~~8.9~~ → ~~8.11~~ → ~~8.12~~ → ~~8.19~~ → ~~8.18~~ → ~~8.20 (automation)~~ → **8.26 (next — DEPLOYMENT.md)** →
+~~8.9~~ → ~~8.11~~ → ~~8.12~~ → ~~8.19~~ → ~~8.18~~ → ~~8.20~~ → ~~8.26 (docs)~~ → ~~8.22–8.25 (done continuously)~~ →
 8.10 → 8.14 →
 8.15 → 8.17 → 8.8 → 8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 →
 8.22–8.26 continuously, not at the end.
@@ -1121,6 +1197,11 @@ do 3.1–3.4 first, then module-by-module scoping) → 4 → 6.1–6.4 → launc
 post-launch iterations (5.1 and 5.5 are worth pulling forward if quoting is a
 day-one use case).
 
-**Current state (2026-11-12):** Phases 0–4 and 6 are done; 5 and 7 have the
-open items marked above. **Phase 8 (Text Messaging) is the active priority** and
-runs ahead of the remaining Phase 5 and Phase 7 items.
+**Current state (2026-11-19):** Phases 0–4, 6 and **8 are done**; 5 and 7
+have the open items marked above. Phase 8 superseded 5.3 entirely.
+
+Next most valuable, now that messaging is complete: **7.2** (email
+verification, which gates the registration funnel), **7.9** (plan editing in
+the super panel), **7.11** (the human click-through regression carried from
+6.1), then **7.12 / 7.13** (tenant export and deletion, both promised by the
+DEPLOYMENT.md data-residency statement).
