@@ -151,6 +151,27 @@ return [
     'sms' => [
         'title' => 'SMS',
 
+        // Kept short: it is appended to every marketing message and
+        // counts toward the segment cost.
+        'opt-out-notice' => 'Reply STOP to opt out.',
+
+        'compliance' => [
+            'title'        => 'Sending rules',
+            'help'         => 'These apply to marketing messages only. Transactional messages (quotes, reminders, confirmations) are never held.',
+            'quiet-hours'  => 'Quiet hours',
+            'quiet-enabled' => 'Hold marketing messages overnight',
+            'quiet-from'   => 'From',
+            'quiet-to'     => 'Until',
+            'quiet-note'   => 'Marketing messages composed during quiet hours are queued and sent when the window opens. Leave blank to use the platform default (:start to :end).',
+            'daily-cap'    => 'Daily limit',
+            'daily-cap-note' => 'Maximum messages per day. Leave blank for the platform default, or 0 for no limit.',
+            'cap-remaining' => ':remaining of :cap left today',
+            'cap-exceeded' => 'This send is :count messages but only :remaining remain under today limit of :cap. Reduce the list or try tomorrow.',
+            'save'         => 'Save sending rules',
+            'saved'        => 'Sending rules saved.',
+            'tcra-note'    => 'Bulk sender IDs in Tanzania are subject to TCRA and operator rules. Confirm your obligations before running large campaigns — these defaults are a starting point, not legal advice.',
+        ],
+
         'bulk' => [
             'title'         => 'Bulk SMS',
             'mass-action'   => 'Send SMS',

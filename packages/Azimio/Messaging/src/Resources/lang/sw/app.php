@@ -139,6 +139,25 @@ return [
     'sms' => [
         'title' => 'SMS',
 
+        'opt-out-notice' => 'Jibu STOP kujitoa.',
+
+        'compliance' => [
+            'title'        => 'Kanuni za utumaji',
+            'help'         => 'Hizi zinahusu jumbe za matangazo tu. Jumbe za kiutendaji (nukuu, kumbusho, uthibitisho) hazizuiliwi kamwe.',
+            'quiet-hours'  => 'Saa za utulivu',
+            'quiet-enabled' => 'Zuia jumbe za matangazo usiku',
+            'quiet-from'   => 'Kuanzia',
+            'quiet-to'     => 'Hadi',
+            'quiet-note'   => 'Jumbe za matangazo zilizoandikwa katika saa za utulivu hupangwa na kutumwa dirisha linapofunguka. Acha wazi kutumia chaguo-msingi la jukwaa (:start hadi :end).',
+            'daily-cap'    => 'Kikomo cha siku',
+            'daily-cap-note' => 'Jumbe nyingi zaidi kwa siku. Acha wazi kwa chaguo-msingi la jukwaa, au 0 kwa bila kikomo.',
+            'cap-remaining' => ':remaining kati ya :cap zimesalia leo',
+            'cap-exceeded' => 'Utumaji huu ni jumbe :count lakini zimesalia :remaining tu katika kikomo cha leo cha :cap. Punguza orodha au jaribu kesho.',
+            'save'         => 'Hifadhi kanuni za utumaji',
+            'saved'        => 'Kanuni za utumaji zimehifadhiwa.',
+            'tcra-note'    => 'Majina ya watumaji kwa wingi Tanzania yanafuata kanuni za TCRA na watoa mitandao. Hakikisha wajibu wako kabla ya kampeni kubwa — hizi ni mwanzo, si ushauri wa kisheria.',
+        ],
+
         'bulk' => [
             'title'         => 'SMS kwa Wingi',
             'mass-action'   => 'Tuma SMS',

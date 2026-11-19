@@ -3,7 +3,9 @@
 namespace Azimio\Messaging\Services;
 
 use Azimio\Messaging\Enums\SmsMode;
+use Azimio\Messaging\Enums\SmsStatus;
 use Azimio\Messaging\Enums\TemplateCategory;
+use Azimio\Messaging\Models\Message;
 use Azimio\Messaging\Models\OptOut;
 use Azimio\Messaging\Models\SenderProfile;
 use Azimio\Messaging\Support\PhoneNormalizer;
@@ -23,9 +25,11 @@ use Azimio\Tenancy\Models\Tenant;
  *  - Opt-out must be checked on the normalised number too, or a suppression
  *    is defeated by a different spelling.
  *
- * Nothing here writes or charges. The same plan the user confirms is the
- * one the pipeline executes, so the quoted price cannot drift from the
- * charged price.
+ * The unsubscribe notice is appended BEFORE counting (8.12), so the price
+ * shown includes it. Appending it later would quietly add a segment to
+ * every marketing message after the user had approved the cost.
+ *
+ * Nothing here writes or charges.
  */
 class SendPlanner
 {
@@ -47,6 +51,8 @@ class SendPlanner
         array $recipients,
         TemplateCategory $category = TemplateCategory::Transactional,
     ): SendPlan {
+        $body = $this->applyOptOutNotice($body, $category);
+
         $segments = $this->segments->count($body);
 
         $planned = $this->classify($recipients);
@@ -56,6 +62,7 @@ class SendPlanner
         $sendable = count(array_filter($planned, fn ($r) => $r->isSendable()));
 
         return new SendPlan(
+            body: $body,
             recipients: $planned,
             segments: $segments,
             mode: $mode,
@@ -63,8 +70,61 @@ class SendPlanner
             // platform mode spends platform credits.
             creditsRequired: $mode->usesPlatformCredits() ? $segments->creditsFor($sendable) : 0,
             balance: $this->ledger->balance($tenant),
-            deferredUntil: $this->quietHours->deferUntil($category),
+            deferredUntil: $this->quietHours->deferUntil($category, null, $tenant),
+            dailyCapRemaining: $this->remainingToday($tenant),
         );
+    }
+
+    /**
+     * Marketing messages carry an unsubscribe instruction (8.12);
+     * transactional ones do not — a quote with "reply STOP" on it reads as
+     * spam and is not what the rule is for.
+     *
+     * Skipped when the notice is already present, so re-sending a template
+     * that includes it does not stack it up.
+     */
+    public function applyOptOutNotice(string $body, TemplateCategory $category): string
+    {
+        if (! $category->needsOptOutNotice()) {
+            return $body;
+        }
+
+        $notice = trim((string) (config('messaging.compliance.opt_out_notice')
+            ?: trans('messaging::app.sms.opt-out-notice')));
+
+        if ($notice === '' || str_contains($body, $notice)) {
+            return $body;
+        }
+
+        return rtrim($body).' '.$notice;
+    }
+
+    /**
+     * How many more messages this tenant may send today, or null when
+     * uncapped. Counts messages that actually reached the provider —
+     * something rejected before submission did not use the allowance.
+     */
+    private function remainingToday(Tenant $tenant): ?int
+    {
+        $cap = $this->quietHours->dailyCap($tenant);
+
+        if ($cap === null) {
+            return null;
+        }
+
+        $sentToday = Message::withoutTenancy()
+            ->where('tenant_id', $tenant->id)
+            ->whereDate('created_at', now()->toDateString())
+            ->whereIn('status', [
+                SmsStatus::Queued->value,
+                SmsStatus::Sending->value,
+                SmsStatus::Submitted->value,
+                SmsStatus::Delivered->value,
+                SmsStatus::Undeliverable->value,
+            ])
+            ->count();
+
+        return max(0, $cap - $sentToday);
     }
 
     /**

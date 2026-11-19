@@ -144,6 +144,66 @@
 
         <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
             <p class="mb-1 text-base font-semibold text-gray-800 dark:text-white">
+                @lang('messaging::app.sms.compliance.title')
+            </p>
+
+            <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                @lang('messaging::app.sms.compliance.help')
+            </p>
+
+            <form method="POST" action="{{ route('admin.sms.settings.compliance') }}" class="grid gap-3 md:grid-cols-4">
+                @csrf
+
+                <label class="flex items-center gap-2 text-xs font-semibold text-gray-500 md:col-span-4">
+                    <input type="checkbox" name="quiet_hours_enabled" value="1"
+                        @checked($quietHours->enabled($tenant)) />
+
+                    @lang('messaging::app.sms.compliance.quiet-enabled')
+                </label>
+
+                <label class="text-xs font-semibold text-gray-500">
+                    @lang('messaging::app.sms.compliance.quiet-from')
+
+                    <input type="time" name="quiet_start" value="{{ $tenant->sms_quiet_start }}"
+                        class="mt-1 w-full rounded-md border px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300" />
+                </label>
+
+                <label class="text-xs font-semibold text-gray-500">
+                    @lang('messaging::app.sms.compliance.quiet-to')
+
+                    <input type="time" name="quiet_end" value="{{ $tenant->sms_quiet_end }}"
+                        class="mt-1 w-full rounded-md border px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300" />
+                </label>
+
+                <label class="text-xs font-semibold text-gray-500">
+                    @lang('messaging::app.sms.compliance.daily-cap')
+
+                    <input type="number" name="daily_cap" min="0" value="{{ $tenant->sms_daily_cap }}"
+                        class="mt-1 w-full rounded-md border px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300" />
+                </label>
+
+                <div class="flex items-end">
+                    <button type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white">
+                        @lang('messaging::app.sms.compliance.save')
+                    </button>
+                </div>
+
+                <p class="text-xs text-gray-500 md:col-span-4">
+                    @lang('messaging::app.sms.compliance.quiet-note', [
+                        'start' => config('messaging.compliance.quiet_hours.start'),
+                        'end'   => config('messaging.compliance.quiet_hours.end'),
+                    ])
+                    @lang('messaging::app.sms.compliance.daily-cap-note')
+                </p>
+
+                <p class="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800 md:col-span-4">
+                    @lang('messaging::app.sms.compliance.tcra-note')
+                </p>
+            </form>
+        </div>
+
+        <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+            <p class="mb-1 text-base font-semibold text-gray-800 dark:text-white">
                 @lang('messaging::app.sms.settings.test-title')
             </p>
 

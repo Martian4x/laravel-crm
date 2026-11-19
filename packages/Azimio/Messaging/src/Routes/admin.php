@@ -33,6 +33,10 @@ Route::prefix('sms')->group(function () {
     Route::post('settings/test', [SmsSettingsController::class, 'test'])
         ->name('admin.sms.settings.test');
 
+    // Per-tenant quiet hours and daily cap (8.12).
+    Route::post('settings/compliance', [SmsSettingsController::class, 'compliance'])
+        ->name('admin.sms.settings.compliance');
+
     // Compose a single message (8.7).
     Route::get('compose', [ComposeController::class, 'index'])
         ->name('admin.sms.compose.index');

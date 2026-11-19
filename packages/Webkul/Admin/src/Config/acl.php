@@ -628,6 +628,7 @@ return [
             'admin.sms.settings.store',
             'admin.sms.settings.platform',
             'admin.sms.settings.test',
+            'admin.sms.settings.compliance',
         ],
         'sort'  => 1,
     ],

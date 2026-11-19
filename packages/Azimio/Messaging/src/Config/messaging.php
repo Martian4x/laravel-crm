@@ -175,9 +175,15 @@ return [
             'exempt_categories' => ['transactional'],
         ],
 
+        // Platform fallback; a tenant may set its own in settings (8.12).
+        // 0 means uncapped.
         'daily_send_cap' => (int) env('AZIMIO_SMS_DAILY_CAP', 5000),
 
         'append_opt_out_notice_to' => ['marketing'],
+
+        // Appended to marketing bodies BEFORE counting, so the quoted price
+        // includes it. Leave null to use the translated default.
+        'opt_out_notice' => env('AZIMIO_SMS_OPT_OUT_NOTICE'),
     ],
 
     /*

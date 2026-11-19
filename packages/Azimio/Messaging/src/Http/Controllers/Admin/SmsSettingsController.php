@@ -41,6 +41,7 @@ class SmsSettingsController extends Controller
             'platformCredits' => $this->ledger->balance($tenant),
             'providerBalance' => $this->providerBalance($profile),
             'drivers'         => $this->availableDrivers(),
+            'quietHours'      => app(\Azimio\Messaging\Services\QuietHours::class),
         ]);
     }
 
@@ -97,6 +98,36 @@ class SmsSettingsController extends Controller
     }
 
     /**
+     * Per-tenant quiet hours and daily cap (8.12).
+     *
+     * Blank fields are stored as NULL, which means "use the platform
+     * default" — distinct from 0, which for the cap means no limit at all.
+     * Collapsing the two would silently turn someone's sending off.
+     */
+    public function compliance(\Illuminate\Http\Request $request)
+    {
+        $validated = $request->validate([
+            'quiet_hours_enabled' => 'nullable|boolean',
+            'quiet_start'         => 'nullable|date_format:H:i',
+            'quiet_end'           => 'nullable|date_format:H:i',
+            'daily_cap'           => 'nullable|integer|min:0|max:1000000',
+        ]);
+
+        Tenant::withoutGlobalScopes()->whereKey(tenant_id())->update([
+            'sms_quiet_hours_enabled' => $request->has('quiet_hours_enabled')
+                ? (bool) $validated['quiet_hours_enabled']
+                : null,
+            'sms_quiet_start' => $validated['quiet_start'] ?? null,
+            'sms_quiet_end'   => $validated['quiet_end'] ?? null,
+            'sms_daily_cap'   => $validated['daily_cap'] ?? null,
+        ]);
+
+        session()->flash('success', trans('messaging::app.sms.compliance.saved'));
+
+        return redirect()->route('admin.sms.settings.index');
+    }
+
+    /**
      * Back to platform credits in one click. The tenant own credentials are
      * kept rather than deleted: switching back should not mean retyping an
      * API secret they may no longer have to hand.
@@ -147,7 +178,7 @@ class SmsSettingsController extends Controller
             return redirect()->route('admin.sms.settings.index');
         }
 
-        $batch = $sender->dispatch($tenant, $profile, $body, $plan, 'Test message', auth()->id());
+        $batch = $sender->dispatch($tenant, $profile, $plan, 'Test message', auth()->id());
 
         session()->flash(
             $batch ? 'success' : 'error',

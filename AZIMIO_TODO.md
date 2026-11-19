@@ -796,7 +796,35 @@ unless there is a reason to revisit, and record the reason here if so.
       suppression at send time, and an unsubscribe instruction auto-appended to
       `marketing`-category messages (configurable text, en/sw). Honours
       `STOP`/`ACHA` replies once inbound is live (8.19).
-- [ ] 8.12 **Compliance guardrails** — per-tenant **quiet hours** (default
+- [x] 8.12 **Compliance guardrails** — **DONE.** Migration
+      `2026_11_19_000001` adds four nullable columns to `tenants`;
+      `QuietHours` became tenant-aware; `SendPlanner` appends the
+      unsubscribe notice and computes the daily allowance; `SendPlan` gained
+      `body`, `dailyCapRemaining` and `isSendable()`; settings page gained a
+      Sending rules card. 15 tests.
+      **NULL means "use the platform default", and that is not the same as
+      0.** For the daily cap, 0 means *uncapped* while NULL means *inherit*
+      — collapsing them would either silently stop a tenant sending or
+      uncap one who never asked. Tested both ways.
+      **The unsubscribe notice is appended BEFORE counting**, so the quoted
+      price includes it. Appending at send time would have quietly added a
+      segment to every marketing message *after* the user approved the cost
+      — there is a test where 150 characters plus the notice crosses into a
+      second segment. It is skipped when already present, so re-sending a
+      template that contains it does not stack it up. Transactional bodies
+      never get it: a quote reading "reply STOP" is not what the rule is for.
+      **`SendPlan` now carries the final body**, and `dispatch()` takes it
+      from there rather than as a separate argument. That removes the class
+      of bug where the priced text and the sent text could diverge.
+      **`dispatch()` guards on `isSendable()`** (recipients + credits + cap)
+      rather than listing conditions at the call site, so a future guard
+      added to the plan cannot be forgotten by a caller.
+      The daily allowance counts only messages that actually reached the
+      provider — something rejected before submission did not use it up.
+      TCRA note surfaced on the settings card, still flagged as a starting
+      point rather than legal advice.
+      Original scope for reference:
+- [ ] 8.12 (original) **Compliance guardrails** — per-tenant **quiet hours** (default
       08:00–21:00 EAT) that defer `marketing` batches to the next window while
       `transactional` messages pass through; a per-tenant daily send cap; and a
       **consent note** on the bulk screen about TCRA rules and sender-ID
@@ -989,7 +1017,7 @@ unless there is a reason to revisit, and record the reason here if so.
 **Suggested order:** ~~8.0~~ → ~~8.1~~ → ~~8.2~~ → ~~8.3 (drivers)~~ →
 ~~8.4~~ → ~~8.5~~ → ~~8.6~~ → ~~8.7~~ → ~~8.10~~ → ~~8.14~~ → ~~8.15 (credits)~~ →
 ~~8.13 + 8.16~~ → ~~8.8 (bulk)~~ → ~~8.17 (dropped by decision)~~ →
-~~8.9 (templates)~~ → ~~8.11 (opt-outs)~~ → **8.12 (next — quiet hours)** →
+~~8.9~~ → ~~8.11~~ → ~~8.12 (compliance)~~ → **8.19 (next — DLR polling)** →
 8.10 → 8.14 →
 8.15 → 8.17 → 8.8 → 8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 →
 8.22–8.26 continuously, not at the end.

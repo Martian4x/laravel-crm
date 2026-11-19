@@ -161,7 +161,6 @@ class ComposeController extends Controller
         $batch = $this->sender->dispatch(
             $tenant,
             $profile,
-            $body,
             $plan,
             trans('messaging::app.sms.compose.single-batch-name'),
             auth()->id(),

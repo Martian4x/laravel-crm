@@ -118,7 +118,7 @@ it('reports a shortfall rather than dispatching without credits', function () {
     expect($plan->creditsRequired)->toBe(2)
         ->and($plan->hasSufficientCredits())->toBeFalse()
         ->and($plan->shortfall())->toBe(1)
-        ->and($this->sender->dispatch(tenantRow($this), $this->profile, 'Hi', $plan))->toBeNull();
+        ->and($this->sender->dispatch(tenantRow($this), $this->profile, $plan))->toBeNull();
 });
 
 it('ignores platform credits entirely for an own-provider send', function () {
@@ -142,7 +142,7 @@ it('writes one message row per recipient and reserves the credits', function () 
     $this->ledger->allocate($this->tenant, 100);
 
     $plan = $this->sender->plan(tenantRow($this), $this->profile, 'Habari', ['0712345678', '0713345678']);
-    $batch = $this->sender->dispatch(tenantRow($this), $this->profile, 'Habari', $plan);
+    $batch = $this->sender->dispatch(tenantRow($this), $this->profile, $plan);
 
     expect($batch)->not->toBeNull()
         ->and($batch->messages()->count())->toBe(2)
@@ -159,7 +159,7 @@ it('settles credits only once the provider accepts', function () {
     $this->ledger->allocate($this->tenant, 100);
 
     $plan = $this->sender->plan(tenantRow($this), $this->profile, 'Habari', ['0712345678']);
-    $batch = $this->sender->dispatch(tenantRow($this), $this->profile, 'Habari', $plan);
+    $batch = $this->sender->dispatch(tenantRow($this), $this->profile, $plan);
 
     runJob($this, $batch, 1);
 
@@ -185,7 +185,7 @@ it('refuses to send from an unapproved sender name', function () {
     ]);
 
     $plan = $this->sender->plan(tenantRow($this), $pending, 'Hi', ['0712345678']);
-    $batch = $this->sender->dispatch(tenantRow($this), $pending, 'Hi', $plan);
+    $batch = $this->sender->dispatch(tenantRow($this), $pending, $plan);
 
     runJob($this, $batch, 0);
 
@@ -199,7 +199,7 @@ it('does not re-send messages that already reached a terminal state', function (
     $this->ledger->allocate($this->tenant, 100);
 
     $plan = $this->sender->plan(tenantRow($this), $this->profile, 'Hi', ['0712345678', '0713345678']);
-    $batch = $this->sender->dispatch(tenantRow($this), $this->profile, 'Hi', $plan);
+    $batch = $this->sender->dispatch(tenantRow($this), $this->profile, $plan);
 
     runJob($this, $batch, 2);
 

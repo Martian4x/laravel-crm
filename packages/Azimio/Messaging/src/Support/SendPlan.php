@@ -12,6 +12,11 @@ use Carbon\CarbonImmutable;
  * same object the pipeline acts on — so the number a user approves is
  * literally the number that gets charged, not a separate estimate that can
  * drift from it.
+ *
+ * $body is the FINAL text, including any unsubscribe notice appended for
+ * marketing (8.12). It has to live here rather than being re-derived at
+ * dispatch, or the notice would be absent from the price shown but present
+ * in what is sent.
  */
 final class SendPlan
 {
@@ -19,12 +24,14 @@ final class SendPlan
      * @param  PlannedRecipient[]  $recipients
      */
     public function __construct(
+        public readonly string $body,
         public readonly array $recipients,
         public readonly SegmentCount $segments,
         public readonly SmsMode $mode,
         public readonly int $creditsRequired,
         public readonly int $balance,
         public readonly ?CarbonImmutable $deferredUntil = null,
+        public readonly ?int $dailyCapRemaining = null,
     ) {
     }
 
@@ -67,5 +74,24 @@ final class SendPlan
     public function hasAnythingToSend(): bool
     {
         return $this->sendableCount() > 0;
+    }
+
+    /**
+     * Whether today's cap would be exceeded. null means uncapped.
+     */
+    public function exceedsDailyCap(): bool
+    {
+        return $this->dailyCapRemaining !== null
+            && $this->sendableCount() > $this->dailyCapRemaining;
+    }
+
+    /**
+     * Everything that must be true before this send may proceed.
+     */
+    public function isSendable(): bool
+    {
+        return $this->hasAnythingToSend()
+            && $this->hasSufficientCredits()
+            && ! $this->exceedsDailyCap();
     }
 }

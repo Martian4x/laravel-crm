@@ -171,10 +171,19 @@ class BulkController extends Controller
             return redirect()->route('admin.sms.credits.index');
         }
 
+        if ($plan->exceedsDailyCap()) {
+            session()->flash('error', trans('messaging::app.sms.compliance.cap-exceeded', [
+                'count'     => $plan->sendableCount(),
+                'remaining' => $plan->dailyCapRemaining,
+                'cap'       => app(\Azimio\Messaging\Services\QuietHours::class)->dailyCap($tenant),
+            ]));
+
+            return redirect()->route('admin.sms.bulk.index');
+        }
+
         $batch = $this->sender->dispatch(
             $tenant,
             $profile,
-            $validated['body'],
             $plan,
             // 'name' is nullable, so Laravel omits the key entirely when
             // the field is not sent — ?: alone would raise "Undefined

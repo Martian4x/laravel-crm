@@ -54,14 +54,20 @@ class SmsSender
     public function dispatch(
         Tenant $tenant,
         SenderProfile $profile,
-        string $body,
         SendPlan $plan,
         ?string $name = null,
         ?int $actorId = null,
     ): ?Batch {
-        if (! $plan->hasAnythingToSend() || ! $plan->hasSufficientCredits()) {
+        // isSendable() covers recipients, credits AND the daily cap (8.12),
+        // so a new guard added to the plan cannot be forgotten here.
+        if (! $plan->isSendable()) {
             return null;
         }
+
+        // The plan's body is final: it already carries the unsubscribe
+        // notice for marketing, and it is the text the quoted price was
+        // counted from.
+        $body = $plan->body;
 
         $batch = DB::transaction(function () use ($tenant, $profile, $body, $plan, $name, $actorId) {
             $batch = new Batch;
