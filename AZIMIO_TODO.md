@@ -945,7 +945,41 @@ unless there is a reason to revisit, and record the reason here if so.
 
 ### D. Integrations & automation
 
-- [ ] 8.19 **Delivery reports + inbound.** **REWRITTEN after reading Beem's docs
+- [x] 8.19 **Delivery reports + inbound.** **DONE**, built to the corrected
+      plan rather than the original one. 15 tests.
+      **Delivery reports: `azimio:sms:poll-delivery-reports`**, scheduled
+      every ten minutes from the package's own provider (so an upstream
+      merge cannot drop the schedule). Beem has no delivery callback, so
+      this polls `(request_id, dest_addr)` — one request per recipient,
+      which is the cost to respect. Guards: only non-terminal submitted
+      rows; nothing younger than Beem's five-minute minimum; **messages
+      older than `max_age_hours` are abandoned**, because polling them
+      forever costs a request each and will never resolve; `--limit` caps
+      each run. `PENDING` is left alone for the next pass. Batch counters
+      are recomputed from the rows after any change.
+      **Inbound: one route, disabled by default.** Beem defines no
+      signature scheme, so a request here cannot be proven to come from
+      them. Every payload is logged to `sms_webhook_events` **before** it is
+      trusted — rejected ones included, since a run of them is what a forged
+      callback looks like. A configured shared secret is compared with
+      `hash_equals`; processing is idempotent on `transaction_id` because
+      Beem retries; and **tenant context is resolved from the sender profile
+      that owns the receiving number, never from the request body.** A
+      callback for an unowned number is logged and ignored. Replies to
+      `STOP`, `ACHA`, `SITAKI` or `UNSUBSCRIBE` write an opt-out with source
+      `stop_reply`, which closes the last gap in 8.11.
+      `phpunit.xml` enables the route for tests only; production default
+      stays off.
+      **Also completes 8.13's pending item:**
+      `azimio:sms:notify-low-balance`, scheduled daily, emails platform-mode
+      tenants at or below their threshold. Throttled to once a week per
+      tenant — a daily mail until they top up trains people to ignore it.
+      Own-provider tenants are skipped: their balance sits at their provider
+      and is not ours to watch.
+      **Still open:** ask Beem for a real inbound verification method before
+      enabling that route in production.
+      Original scope for reference:
+- [ ] 8.19 (original) **Delivery reports + inbound.** **REWRITTEN after reading Beem's docs
       in 8.3 — the original plan here was wrong.** It assumed a *signed
       delivery-report webhook*. Beem has neither:
       - **Delivery reports are POLLING ONLY.** Beem's REST SMS API has no
@@ -1017,7 +1051,7 @@ unless there is a reason to revisit, and record the reason here if so.
 **Suggested order:** ~~8.0~~ → ~~8.1~~ → ~~8.2~~ → ~~8.3 (drivers)~~ →
 ~~8.4~~ → ~~8.5~~ → ~~8.6~~ → ~~8.7~~ → ~~8.10~~ → ~~8.14~~ → ~~8.15 (credits)~~ →
 ~~8.13 + 8.16~~ → ~~8.8 (bulk)~~ → ~~8.17 (dropped by decision)~~ →
-~~8.9~~ → ~~8.11~~ → ~~8.12 (compliance)~~ → **8.19 (next — DLR polling)** →
+~~8.9~~ → ~~8.11~~ → ~~8.12~~ → ~~8.19 (DLR + inbound)~~ → **8.18 + 8.20 (next)** →
 8.10 → 8.14 →
 8.15 → 8.17 → 8.8 → 8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 →
 8.22–8.26 continuously, not at the end.

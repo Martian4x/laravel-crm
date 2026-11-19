@@ -1,5 +1,8 @@
 <?php
 
+use Azimio\Messaging\Http\Controllers\Webhook\InboundController;
+use Illuminate\Support\Facades\Route;
+
 /**
  * Public provider callback routes.
  *
@@ -8,19 +11,17 @@
  * IMPORTANT — corrected in 8.3 after reading Beem's documentation:
  *
  *  - There is NO delivery-report callback for Beem's REST SMS API. Delivery
- *    status is POLLED (see 8.19 and BeemDriver::deliveryReports), so no
+ *    status is POLLED by azimio:sms:poll-delivery-reports (8.19), so no
  *    delivery-report route belongs here at all.
  *  - Inbound/two-way SMS IS a callback, but Beem documents NO signature or
  *    HMAC scheme for it — only an unspecified "optionally validate the API
- *    key". An inbound callback therefore CANNOT be proven to come from Beem.
+ *    key". An inbound callback therefore CANNOT be proven to come from
+ *    Beem, which is why this whole group is disabled by default via
+ *    messaging.webhooks.enabled and the controller treats every payload as
+ *    hostile input.
  *
- * So the inbound route, when it lands, must treat every payload as hostile
- * input: log it before trusting it, process idempotently by transaction_id,
- * and resolve tenant context from the sender profile that owns the receiving
- * number — never from the request body, which the caller controls.
- *
- * The whole group is disabled by default via messaging.webhooks.enabled.
- *
- * Populated by Phase 8 item 8.19:
- *   POST inbound   two-way / inbound SMS, STOP + ACHA opt-out
+ * Ask Beem for a real verification method before enabling this in
+ * production, and pair it with an unguessable path and whatever network
+ * restriction the deployment can manage.
  */
+Route::post('inbound', InboundController::class)->name('messaging.webhook.inbound');

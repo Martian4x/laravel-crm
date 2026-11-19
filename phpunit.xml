@@ -30,5 +30,12 @@
         <server name="QUEUE_CONNECTION" value="sync" />
         <server name="SESSION_DRIVER" value="array" />
         <server name="TELESCOPE_ENABLED" value="false" />
+        <!--
+            The inbound SMS webhook is disabled by default in production
+            (Beem defines no signature scheme for it — see 8.19), but the
+            route has to exist for its tests to exercise the rejection and
+            idempotency paths.
+        -->
+        <server name="AZIMIO_SMS_WEBHOOKS" value="true" />
     </php>
 </phpunit>

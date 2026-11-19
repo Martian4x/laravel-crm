@@ -91,6 +91,8 @@ return [
             'review-link'       => 'Pitia ombi',
             'reviewed-subject'  => 'Ombi lako la salio la SMS limepitiwa',
             'reviewed-intro'    => 'Ombi lako la salio la SMS limepitiwa.',
+            'low-balance-subject' => 'Salio lako la SMS linakaribia kuisha',
+            'low-balance-intro'   => 'Kampuni yako imesalia na salio :balance la SMS, ambalo ni sawa au chini ya kiwango chako cha tahadhari cha :threshold. Omba zaidi kabla ya kampeni yako ijayo ili utumaji usizuiliwe.',
         ],
     ],
 

@@ -100,6 +100,8 @@ return [
             'review-link'       => 'Review the request',
             'reviewed-subject'  => 'Your SMS credit request has been reviewed',
             'reviewed-intro'    => 'Your request for SMS credits has been reviewed.',
+            'low-balance-subject' => 'Your SMS credits are running low',
+            'low-balance-intro'   => 'Your company has :balance SMS credits left, which is at or below your warning level of :threshold. Request more before your next campaign so sends are not blocked.',
         ],
     ],
 

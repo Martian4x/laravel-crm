@@ -9,6 +9,7 @@ use Azimio\Messaging\Services\SendPlanner;
 use Azimio\Messaging\Services\SmsSender;
 use Azimio\Messaging\Support\PhoneNormalizer;
 use Azimio\Messaging\Support\SegmentCounter;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -130,7 +131,36 @@ class MessagingServiceProvider extends ServiceProvider
     protected function registerCommands(): void
     {
         $this->commands([
-            //
+            \Azimio\Messaging\Console\Commands\PollDeliveryReports::class,
+            \Azimio\Messaging\Console\Commands\NotifyLowSmsBalance::class,
         ]);
+
+        $this->scheduleCommands();
+    }
+
+    /**
+     * Scheduled from the package rather than the app's Kernel, so the
+     * module brings its own schedule and an upstream merge cannot drop it.
+     *
+     * Delivery reports are POLLED because Beem has no callback for them
+     * (8.19). Every ten minutes keeps statuses fresh without hammering the
+     * provider — recall each message is one request, so a large batch is
+     * spread over several runs by the command's own --limit.
+     */
+    protected function scheduleCommands(): void
+    {
+        $this->app->booted(function () {
+            $schedule = $this->app->make(Schedule::class);
+
+            if (config('messaging.delivery_reports.enabled', true)) {
+                $schedule->command('azimio:sms:poll-delivery-reports')
+                    ->everyTenMinutes()
+                    ->withoutOverlapping();
+            }
+
+            $schedule->command('azimio:sms:notify-low-balance')
+                ->dailyAt('08:30')
+                ->withoutOverlapping();
+        });
     }
 }
