@@ -1035,7 +1035,33 @@ unless there is a reason to revisit, and record the reason here if so.
         `{"transaction_id": "...", "successful": true}` as Beem expects.
         **Ask Beem directly for a real verification method before enabling
         this in production.**
-- [ ] 8.20 **Notification channel + workflow action** — *this is the original 5.3.*
+- [x] 8.20 **Notification channel + workflow action** — *the original 5.3.*
+      **DONE.** `SmsChannel` registered as the `sms` notification driver,
+      `SmsNotification` message object, `WorkflowSms` service, and a
+      **Send SMS to contact** action on the Lead workflow builder. 8 tests.
+      **Both routes go through `SmsSender`, never a driver directly.** An
+      automated send is still a send: normalised, opt-out checked,
+      quiet-hours checked, segment counted, charged and logged exactly like
+      a hand-written one. A channel or workflow that bypassed the pipeline
+      would be **the one path that can message somebody who opted out** —
+      so there is a test for precisely that on each route.
+      **Failures are swallowed with a log line, never thrown.** A blocked
+      SMS must not break the thing that triggered it: a lead assignment
+      must still save, and a workflow must still run its other actions.
+      Notifications default to `transactional`, so quiet hours do not hold
+      them — a reminder that arrives twelve hours late is not a reminder.
+      **Only one line was added to the upstream Automation package** (the
+      action, delegating to `Azimio\Messaging\Services\WorkflowSms`), to
+      keep future Krayin merges cheap.
+      **Deferred, with reasons:** the three specific triggers (lead
+      assigned, activity reminder, quote sent) need `Notifiable` on
+      Krayin's own models and notification classes that do not exist yet —
+      the channel they would use is done and tested, so wiring each is a
+      small, separate change. Per-user alert SMS needs a phone column on
+      `users` plus an opt-in, which is a schema change for a different
+      audience (staff, not customers) and is better scoped on its own.
+      Original scope for reference:
+- [ ] 8.20 (original) **Notification channel + workflow action**
       A Laravel `sms` notification channel so existing notifications can ride SMS,
       wired to: lead assigned, activity reminder due, quote sent. Plus a
       **"Send SMS" workflow action** in the existing workflow builder (template +
@@ -1077,7 +1103,7 @@ unless there is a reason to revisit, and record the reason here if so.
 **Suggested order:** ~~8.0~~ → ~~8.1~~ → ~~8.2~~ → ~~8.3 (drivers)~~ →
 ~~8.4~~ → ~~8.5~~ → ~~8.6~~ → ~~8.7~~ → ~~8.10~~ → ~~8.14~~ → ~~8.15 (credits)~~ →
 ~~8.13 + 8.16~~ → ~~8.8 (bulk)~~ → ~~8.17 (dropped by decision)~~ →
-~~8.9~~ → ~~8.11~~ → ~~8.12~~ → ~~8.19~~ → ~~8.18 (oversight)~~ → **8.20 (next — notifications + workflow)** →
+~~8.9~~ → ~~8.11~~ → ~~8.12~~ → ~~8.19~~ → ~~8.18~~ → ~~8.20 (automation)~~ → **8.26 (next — DEPLOYMENT.md)** →
 8.10 → 8.14 →
 8.15 → 8.17 → 8.8 → 8.9 → 8.11 → 8.13 → 8.16 → 8.12 → 8.19 → 8.18 → 8.20 →
 8.22–8.26 continuously, not at the end.

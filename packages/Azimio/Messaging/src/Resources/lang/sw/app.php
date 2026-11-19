@@ -5,6 +5,11 @@ return [
 
     'compose-body' => 'Ujumbe',
 
+    'workflow' => [
+        'send-sms-to-person' => 'Tuma SMS kwa mwasiliani',
+        'batch-name'         => 'Mtiririko: :title',
+    ],
+
     'templates' => [
         'title'       => 'Violezo vya SMS',
         'new'         => 'Kiolezo kipya',
@@ -158,6 +163,7 @@ return [
         'title' => 'SMS',
 
         'opt-out-notice' => 'Jibu STOP kujitoa.',
+        'notification-batch' => 'Taarifa ya kiotomatiki',
 
         'compliance' => [
             'title'        => 'Kanuni za utumaji',

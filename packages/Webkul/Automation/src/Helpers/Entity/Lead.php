@@ -93,6 +93,19 @@ class Lead extends AbstractEntity
                 'id'      => 'trigger_webhook',
                 'name'    => trans('admin::app.settings.workflows.helpers.add-webhook'),
                 'options' => $webhooksOptions,
+            ], [
+                /**
+                 * Azimio Phase 8.20: send an SMS to the lead's contact.
+                 * Options are the tenant's SMS templates, which are
+                 * tenant-scoped, so one company never sees another's.
+                 */
+                'id'      => 'send_sms_to_person',
+                'name'    => trans('messaging::app.workflow.send-sms-to-person'),
+                'options' => \Azimio\Messaging\Models\Template::query()
+                    ->orderBy('name')
+                    ->get()
+                    ->map(fn ($template) => ['id' => $template->id, 'value' => $template->name])
+                    ->toArray(),
             ],
         ];
     }
@@ -121,6 +134,27 @@ class Lead extends AbstractEntity
                         'entity_type'        => 'persons',
                         $action['attribute'] => $action['value'],
                     ], $lead->person_id);
+
+                    break;
+
+                case 'send_sms_to_person':
+                    /**
+                     * Azimio Phase 8.20. Routed through SmsSender, not a
+                     * driver, so an automated send is subject to the same
+                     * opt-out, credit, quiet-hours and daily-cap checks as
+                     * a hand-written one — a workflow must not be the one
+                     * way to message somebody who opted out.
+                     *
+                     * Failures are swallowed: a workflow exists to do
+                     * several things, and a blocked SMS must not stop the
+                     * rest of them.
+                     */
+                    try {
+                        app(\Azimio\Messaging\Services\WorkflowSms::class)
+                            ->sendToLeadPerson($lead, (int) $action['value']);
+                    } catch (\Throwable $e) {
+                        report($e);
+                    }
 
                     break;
 

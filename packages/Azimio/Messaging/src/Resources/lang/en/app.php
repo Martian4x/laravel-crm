@@ -5,6 +5,11 @@ return [
 
     'compose-body' => 'Message',
 
+    'workflow' => [
+        'send-sms-to-person' => 'Send SMS to contact',
+        'batch-name'         => 'Workflow: :title',
+    ],
+
     /**
      * Templates (8.9).
      */
@@ -172,6 +177,7 @@ return [
         // Kept short: it is appended to every marketing message and
         // counts toward the segment cost.
         'opt-out-notice' => 'Reply STOP to opt out.',
+        'notification-batch' => 'Automated notification',
 
         'compliance' => [
             'title'        => 'Sending rules',

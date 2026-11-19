@@ -3,6 +3,7 @@
 namespace Azimio\Messaging\Providers;
 
 use Azimio\Messaging\DriverManager;
+use Azimio\Messaging\Notifications\Channels\SmsChannel;
 use Azimio\Messaging\Services\CreditLedger;
 use Azimio\Messaging\Services\QuietHours;
 use Azimio\Messaging\Services\SendPlanner;
@@ -10,6 +11,8 @@ use Azimio\Messaging\Services\SmsSender;
 use Azimio\Messaging\Support\PhoneNormalizer;
 use Azimio\Messaging\Support\SegmentCounter;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Notifications\ChannelManager;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -119,7 +122,20 @@ class MessagingServiceProvider extends ServiceProvider
      */
     protected function registerListeners(): void
     {
-        //
+        $this->registerNotificationChannel();
+    }
+
+    /**
+     * Make `sms` usable in a notification's via() (8.20).
+     *
+     * The channel routes through SmsSender, so an automated send is subject
+     * to the same opt-out, credit and cap checks as a hand-written one.
+     */
+    protected function registerNotificationChannel(): void
+    {
+        Notification::resolved(function (ChannelManager $service) {
+            $service->extend('sms', fn ($app) => $app->make(SmsChannel::class));
+        });
     }
 
     /**
