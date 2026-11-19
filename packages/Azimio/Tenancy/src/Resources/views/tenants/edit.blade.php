@@ -144,5 +144,57 @@
                 </button>
             </form>
         </div>
+
+        {{--
+            7.12 / 7.13 — offboarding. Export first, then delete, and the
+            delete is gated: not while the company is still active, not
+            until the grace period has run, and not without typing the name.
+            A yes/no dialog is too easy to click through for something this
+            final.
+        --}}
+        <div class="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
+            <p class="text-base font-semibold text-red-900 dark:text-red-200">
+                @lang('azimio::app.tenants.offboarding')
+            </p>
+
+            <p class="mt-1 text-sm text-red-800 dark:text-red-300">
+                @lang('azimio::app.tenants.offboarding-help', ['days' => $graceDays])
+            </p>
+
+            <a href="{{ route('super.tenants.export', $tenant->id) }}"
+                class="mt-3 inline-block rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-800">
+                @lang('azimio::app.tenants.export-data')
+            </a>
+
+            <div class="mt-4 border-t border-red-200 pt-4 dark:border-red-900">
+                @if ($deleteBlocked)
+                    <p class="text-sm text-red-800 dark:text-red-300">
+                        <strong>@lang('azimio::app.tenants.delete-unavailable')</strong>
+                        {{ $deleteBlocked }}
+                    </p>
+                @else
+                    <form method="POST" action="{{ route('super.tenants.destroy', $tenant->id) }}"
+                        class="flex flex-wrap items-end gap-3">
+                        @csrf
+                        @method('DELETE')
+
+                        <label class="text-xs font-semibold text-red-800 dark:text-red-300">
+                            @lang('azimio::app.tenants.delete-confirm-label', ['name' => $tenant->name])
+
+                            <input type="text" name="confirm_name" required autocomplete="off"
+                                class="mt-1 w-64 rounded-md border border-red-300 px-3 py-2 text-sm" />
+                        </label>
+
+                        <button type="submit" class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white">
+                            @lang('azimio::app.tenants.delete-permanently')
+                        </button>
+
+                        <p class="w-full text-xs text-red-700 dark:text-red-400">
+                            @lang('azimio::app.tenants.delete-warning')
+                        </p>
+                    </form>
+                @endif
+            </div>
+        </div>
     </div>
 </x-admin::layouts>

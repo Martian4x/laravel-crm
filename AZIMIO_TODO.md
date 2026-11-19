@@ -401,10 +401,65 @@ scoped to be done one by one, in the suggested order at the end.
 
 ### D. Lifecycle & offboarding
 
-- [ ] 7.12 **Tenant data export**: per-tenant Excel/CSV export (leads, persons,
+- [x] 7.12 **Tenant data export** — **DONE.** `TenantExporter` builds a zip
+      of CSVs (11 tables plus a README) streamed from the super panel. 4
+      tests.
+      **Deliberately raw `DB::table()` with an explicit `tenant_id`
+      filter**, not the models: an export must include rows regardless of
+      global scopes or anything a model hides, and it runs as a super admin
+      with no tenant context for a scope to use anyway. The filter is
+      written out every time rather than inferred.
+      **Passwords, tokens and provider credentials are never exported** —
+      the column is dropped from the header, not just blanked, and a test
+      asserts the word `password` does not appear.
+      **The table list is explicit, so adding one is a decision.**
+      `core_config` is settings rather than data, `sms_sender_profiles`
+      holds encrypted credentials that must never leave, and the
+      operational `sms_*` tables are noise in an offboarding pack.
+      Tables with no rows are omitted — an archive of empty files is
+      harder to read, not more complete. JSON columns (a contact's emails,
+      phone numbers) stay as JSON rather than being invented into columns,
+      which would lose data.
+      The archive is streamed then deleted: it is a full copy of one
+      customer's data and has no business sitting in storage.
+      **This makes the DEPLOYMENT.md data-residency promise true** — it
+      previously said per-tenant export was possible via a `mysqldump`
+      recipe, which is not something you hand a customer.
+      Original scope for reference:
+- [ ] (original) 7.12 **Tenant data export**: per-tenant Excel/CSV export (leads, persons,
       organizations, quotes, activities) — needed for offboarding requests and
       the DEPLOYMENT.md data-residency promise.
-- [ ] 7.13 **Tenant deletion with grace period**: suspend → export → delete
+- [x] 7.13 **Tenant deletion with grace period** — **DONE.**
+      `TenantEraser` plus an offboarding panel on the tenant edit page.
+      7 tests.
+      **This replaced an immediate, unguarded delete.** The old `destroy()`
+      removed the tenant and its users on the spot, so one mis-click
+      destroyed a customer's data with nothing in the way. Three things now
+      are:
+      1. **Still active?** Refused. Deleting an account somebody is using is
+         almost always a mistake — suspending first is what starts the clock.
+      2. **Grace period still running?** Refused, with the days remaining
+         and the eligible date, so a wrong suspension can be undone by
+         reactivating. Default 14 days via
+         `config('azimio.deletion_grace_days')`.
+      3. **Name not typed exactly?** Refused. A yes/no dialog is too easy to
+         click through for something this final.
+      `blockedReason()` returns a *reason* rather than a bool, so the UI can
+      say which rule is in the way instead of greying a button out.
+      **Row counts are taken BEFORE deleting** and logged with the actor —
+      afterwards there is nothing to count, and "we deleted something" is
+      not an audit record.
+      File cleanup works through the rows that reference uploads before
+      those rows disappear, since Phase 3.9 made upload paths entity-scoped
+      rather than tenant-scoped so there is no single directory to drop. A
+      missing file is logged and skipped: an orphan file is a smaller
+      problem than a half-deleted tenant.
+      **Bug found by the tests:** `daysRemaining()` lost a whole day to
+      sub-second drift (`now()` advances between building `suspended_at` and
+      measuring, so an exact 9-day gap read as 8.999 and truncated). Rounded
+      up — a partial day is still a day of grace.
+      Original scope for reference:
+- [ ] (original) 7.13 **Tenant deletion with grace period**: suspend → export → delete
       (FK cascades already wipe child rows); confirmation flow in the super
       panel and file-storage cleanup for the tenant's uploads.
 

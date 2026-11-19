@@ -3,6 +3,8 @@
 namespace Azimio\Tenancy\Http\Controllers;
 
 use Azimio\Tenancy\Models\Tenant;
+use Azimio\Tenancy\TenantEraser;
+use Azimio\Tenancy\TenantExporter;
 use Azimio\Tenancy\TenantOnboarder;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -95,9 +97,13 @@ class TenantController extends Controller
     {
         $tenant = Tenant::findOrFail($id);
 
+        $eraser = app(TenantEraser::class);
+
         return view('azimio::tenants.edit', [
-            'tenant'  => $tenant,
-            'locales' => config('app.available_locales'),
+            'tenant'        => $tenant,
+            'locales'       => config('app.available_locales'),
+            'deleteBlocked' => $eraser->blockedReason($tenant),
+            'graceDays'     => $eraser->graceDays(),
         ]);
     }
 
@@ -145,19 +151,62 @@ class TenantController extends Controller
     /**
      * Delete a tenant and all its users.
      */
-    public function destroy(int $id)
+    public function destroy(int $id, TenantEraser $eraser)
     {
         $tenant = Tenant::findOrFail($id);
 
-        \Webkul\User\Models\User::withoutTenancy()
-            ->where('tenant_id', $tenant->id)
-            ->delete();
+        /**
+         * 7.13: suspend -> export -> delete, enforced rather than
+         * suggested. Previously this deleted immediately, which meant one
+         * mis-click destroyed a customer's data with no window to undo it.
+         *
+         * The guard refuses while the tenant is still active, and while the
+         * grace period is still running.
+         */
+        if ($reason = $eraser->blockedReason($tenant)) {
+            session()->flash('error', $reason);
 
-        $tenant->delete();
+            return redirect()->route('super.tenants.edit', $tenant->id);
+        }
 
-        session()->flash('success', trans('azimio::app.tenants.deleted'));
+        /**
+         * Typing the company name is the confirmation. A yes/no dialog is
+         * too easy to click through for something this final.
+         */
+        if (request()->input('confirm_name') !== $tenant->name) {
+            session()->flash('error', trans('azimio::app.tenants.delete-name-mismatch'));
+
+            return redirect()->route('super.tenants.edit', $tenant->id);
+        }
+
+        $name = $tenant->name;
+
+        $removed = $eraser->erase($tenant);
+
+        session()->flash('success', trans('azimio::app.tenants.deleted-with-counts', [
+            'name' => $name,
+            'rows' => array_sum($removed),
+        ]));
 
         return redirect()->route('super.tenants.index');
+    }
+
+    /**
+     * Download everything one tenant owns, as a zip of CSVs (7.12).
+     *
+     * Streamed and then deleted: the archive is a full copy of one
+     * customer's data and has no business sitting in storage.
+     */
+    public function export(int $id, TenantExporter $exporter)
+    {
+        $tenant = Tenant::findOrFail($id);
+
+        $path = $exporter->export($tenant);
+
+        return response()->download(
+            $path,
+            'azimio-export-'.$tenant->slug.'-'.now()->format('Y-m-d').'.zip',
+        )->deleteFileAfterSend(true);
     }
 
     /**

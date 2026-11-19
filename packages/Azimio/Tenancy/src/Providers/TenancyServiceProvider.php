@@ -117,6 +117,9 @@ class TenancyServiceProvider extends ServiceProvider
 
                 Route::delete('tenants/{id}', [TenantController::class, 'destroy'])->name('super.tenants.destroy');
 
+                // 7.12: offboarding export.
+                Route::get('tenants/{id}/export', [TenantController::class, 'export'])->name('super.tenants.export');
+
                 Route::post('tenants/{id}/impersonate', [TenantController::class, 'impersonate'])->name('super.tenants.impersonate');
 
                 // Cross-tenant user management.
