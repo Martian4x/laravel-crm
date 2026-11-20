@@ -456,7 +456,7 @@ ssh az1 'ln -sfn /var/www/clients/releases/<TIMESTAMP> /var/www/clients/current 
 | `clients.azimio.co.tz` | A → 152.239.123.46, DNS-only | `*.azimio.co.tz` wildcard | the app (canonical on azimio.co.tz) |
 | `clients.co.tz` | A → 152.239.123.46, DNS-only | own cert, expires 2027-02-17 | the app |
 | `www.clients.co.tz` | A → 152.239.123.46, DNS-only | own cert | 301 → `clients.co.tz` |
-| `customers.azimio.co.tz` | **unchanged — still cPanel** | — | see the warning below |
+| `customers.azimio.co.tz` | A → 152.239.123.46, DNS-only | `*.azimio.co.tz` wildcard | 301 → `clients.azimio.co.tz` |
 
 DNS lives in Cloudflare, records set **DNS-only (grey cloud)**. The origin
 holds valid Let's Encrypt certificates, so proxying adds nothing that is
@@ -468,19 +468,26 @@ hostname always goes cert-first: referencing a certificate path that does
 not exist makes `nginx -t` fail, and a failed reload takes **every** site on
 this box down.
 
-> ### ⚠️ `customers.azimio.co.tz` was deliberately NOT repointed
+> ### `customers.azimio.co.tz` was cut over on 2026-11-20
 >
-> That hostname already serves a **separate, live instance of this same
-> CRM** on the cPanel host `65.181.113.174` — the deployment described in
-> the cPanel section above. It answers with an AzimioCustomers login page
-> and sets an `azimiocustomers_session` cookie.
+> That hostname used to serve a separate, live instance of this same CRM on
+> the cPanel host `65.181.113.174`. Its data was migrated to az1 first (see
+> below), verified, and only then was DNS repointed — in that order, because
+> repointing first would have shown its users an empty database.
 >
-> Repointing its DNS to az1 would send its users to a different database.
-> Their logins would fail and their data would look deleted, while actually
-> remaining on cPanel.
+> It now resolves to `152.239.123.46` (DNS-only) and **301s to
+> `clients.azimio.co.tz`**, preserving the path and query string, so old
+> bookmarks and deep links still land on the right page. One canonical
+> hostname means one session cookie and no duplicate content.
 >
-> Decide first what should happen to that instance: migrate its data to az1
-> and then repoint, keep both and leave DNS alone, or retire it.
+> The 301 is permanent and browsers cache it hard. If this hostname should
+> ever serve the app directly instead of redirecting, change the `server`
+> block at `sites-available/clients` **and** expect cached redirects to
+> linger in browsers that have already seen one.
+>
+> The cPanel instance was left running and completely untouched — its
+> database still holds all 3 tenants and 318 activities. Nothing there has
+> been deleted. Retire it deliberately, once you are satisfied with az1.
 
 ### Migrating the old cPanel instance onto az1
 
@@ -578,10 +585,16 @@ Backups kept: `/root/db-backups/azimio_clients-before-import-20261120030400.sql.
 (the fresh install, pre-import) and `/root/import/customers.sql.gz` (the
 source dump exactly as imported).
 
-**`customers.azimio.co.tz` DNS is still unchanged** and still served by
-cPanel — re-fingerprinted after the migration (`/verify` → 404 there, 200 on
-az1). Nothing was altered on the old host; it remains live and intact. The
-cutover is yours to call.
+**DNS was then cut over**, same day, once the above had been verified. In
+Cloudflare the single `customers` A record went from `65.181.113.174`
+(proxied) to `152.239.123.46` (DNS-only). No other record was touched —
+`cpanel`, `webmail`, `ftp`, `webdisk`, `whm`, `autoconfig`, `autodiscover`,
+`cpcalendars`, `cpcontacts`, `loans` and the `mail` CNAME all still point at
+the cPanel host, and were re-checked afterwards.
+
+Verified after propagation: 1.1.1.1 and 8.8.8.8 both return
+`152.239.123.46`, and `https://customers.azimio.co.tz/admin/login` 301s to
+`clients.azimio.co.tz/admin/login` and serves 200 from az1.
 
 Note for whoever retires that host: its `.env` has `APP_ENV=local` and
 `APP_DEBUG=true` on a public site, which renders stack traces (including
