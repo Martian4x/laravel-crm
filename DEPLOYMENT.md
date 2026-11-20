@@ -537,6 +537,56 @@ half-imported schema, and prints the restore command.
 through `clients.azimio.co.tz` before repointing `customers.azimio.co.tz`,
 and leave the cPanel instance running until the cutover is confirmed.
 
+#### Done — 2026-11-20
+
+The migration ran. Source: `azimio_customers` on `s2873.fra1.stableserver.net`
+(cPanel account `azimio`, 93 migrations). The 12-migration delta was
+confirmed by diffing the two `migrations` tables, not assumed.
+
+| | Source | On az1 after migrate |
+|---|---|---|
+| tenants | 3 | 3 (all `activated_at` set) |
+| users | 4 | 4 (all `email_verified_at` set) |
+| persons | 17 | 17 |
+| organizations | 4 | 4 |
+| leads | 13 | 13 |
+| activities | 318 | 318 |
+| quotes / products | 1 / 15 | 1 / 15 |
+
+Deliberate deviations from a byte-faithful copy, both reported:
+
+- **3 queued jobs were dropped, not delivered.** They were
+  `NewTenantRegistered` mails with `attempts=0` from July and October — the
+  cPanel queue worker had never run. Importing them would have had az1
+  deliver months-stale welcome mail to real tenants.
+- **Sessions were truncated**, as az1's `APP_KEY` differs. Everyone logs in
+  again; password hashes are bcrypt and came across intact.
+
+Carried over as-is, pre-existing and **not** caused by the migration:
+
+- Organization `id=1` "Azimio Systems" has `tenant_id = NULL` — it is
+  already `NULL` in the source dump. Under `TenantScope` it is invisible to
+  every tenant. `php artisan azimio:tenant:adopt` assigns orphan rows to a
+  tenant if that is what is wanted; it was left alone rather than guessed at.
+
+> The generated super-admin password from the first az1 install **no longer
+> works** — that account was in the database the import replaced. Log in
+> with the old instance's own credentials. `/root/.clients-admin-pass` has
+> been renamed `.OBSOLETE-replaced-by-import` with a README beside it.
+
+Backups kept: `/root/db-backups/azimio_clients-before-import-20261120030400.sql.gz`
+(the fresh install, pre-import) and `/root/import/customers.sql.gz` (the
+source dump exactly as imported).
+
+**`customers.azimio.co.tz` DNS is still unchanged** and still served by
+cPanel — re-fingerprinted after the migration (`/verify` → 404 there, 200 on
+az1). Nothing was altered on the old host; it remains live and intact. The
+cutover is yours to call.
+
+Note for whoever retires that host: its `.env` has `APP_ENV=local` and
+`APP_DEBUG=true` on a public site, which renders stack traces (including
+database credentials) to any visitor who triggers an error.
+
 ### Never reload nginx blind
 
 nginx on this box serves nine other production sites. Always:
