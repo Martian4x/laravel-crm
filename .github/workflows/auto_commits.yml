@@ -5,6 +5,14 @@ on: [push, pull_request]
 permissions:
   contents: write
 
+# This job PUSHES a commit back to the branch. Two runs of it on the same
+# ref at once (a same-repo PR fires both `push` and `pull_request`) means
+# two auto-commits racing, which is how a developer's own push ends up
+# rebased under a "chore: applied pint changes" commit mid-work.
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   linting_tests:
     runs-on: ${{ matrix.operating-systems }}
@@ -25,6 +33,14 @@ jobs:
         env:
           COMPOSER_HOME: ${{ runner.temp }}/composer
 
+      # Scope lives in pint.json, NOT here, so a local `./vendor/bin/pint`
+      # and this job format exactly the same set of files. pint.json
+      # excludes packages/Webkul: that is upstream Krayin code, and this
+      # repo's preset adds a non-default `=>` alignment rule, so every
+      # upstream merge would otherwise be followed by Pint rewriting
+      # hundreds of files it does not own -- and every one of those becomes
+      # a conflict on the NEXT upstream merge. Commit 100a836d did exactly
+      # that to 77 files, 11 of them Webkul's.
       - name: Run Pint
         run: ${{ runner.temp }}/composer/vendor/bin/pint
 
