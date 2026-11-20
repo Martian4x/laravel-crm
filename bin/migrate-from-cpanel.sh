@@ -303,9 +303,19 @@ fi
 #    payloads cannot be decrypted. Users log in again; password hashes are
 #    bcrypt and unaffected.
 # ---------------------------------------------------------------------------
-say "Clearing caches and stale sessions"
+say "Clearing caches, stale sessions and stale queued jobs"
 mysql_q "TRUNCATE TABLE sessions" 2>/dev/null && echo "   sessions truncated" || echo "   no sessions table (file driver)"
 mysql_q "TRUNCATE TABLE cache" 2>/dev/null || true
+
+# Queued jobs are DROPPED, not inherited. The old instance's queue worker
+# never ran, so its jobs table holds months-old mail -- importing it would
+# have az1's worker deliver stale "new tenant registered" notices to real
+# people the moment it starts. A job that never ran in four months is not a
+# job anyone is waiting for.
+PENDING_JOBS=$(mysql_q "SELECT COUNT(*) FROM jobs" 2>/dev/null || echo 0)
+if [ "${PENDING_JOBS:-0}" != "0" ]; then
+    mysql_q "TRUNCATE TABLE jobs" && echo "   dropped $PENDING_JOBS stale queued job(s) -- NOT delivered"
+fi
 for c in cache:clear config:cache route:cache view:cache; do
     sudo -u "$RUN_USER" php "$APP_DIR/artisan" "$c" >/dev/null && echo "   $c"
 done
