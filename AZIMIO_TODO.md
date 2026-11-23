@@ -1371,3 +1371,93 @@ verification method).
 Everything still open is deferred by choice: **8.21** (SMS nice-to-haves),
 **5.6** (low-bandwidth audit), the Phase 5 refinements, and a native
 Swahili review of the newer strings.
+
+---
+
+## Phase 9 — Profile fields, Services, SMS setup retention
+
+Added 2026-11-24 from direct feedback. Writing 9.2 turned up the reason the
+TIN/VRN request was made at all: **the fields were shipped but have never
+existed on any installed system.** That is 9.1, and it must land first or
+anything else added the same way will vanish the same way.
+
+### 9.1 Attributes added by migration are deleted at install — **BUG**
+
+`krayin-crm:install` runs `migrate:fresh` (Installer.php:70), which applies
+`2026_07_22_000006_add_tanzania_market_attributes` and inserts
+`payment_method`, `payment_reference`, `tin` and `vrn`. It then runs the
+seeders (line 73), and `AttributeSeeder.php:19` does
+`DB::table('attributes')->delete()` before inserting Krayin's base 42.
+
+So the migration is recorded as run and its rows are gone. Verified on
+production az1 and locally: migration present, **0 of the 4 attributes**,
+exactly 42 rows. 5.4 (mobile money on quotes) and 5.5 (TRA TIN/VRN) are
+both ticked and neither has ever worked on a fresh install. The quote PDF
+header documented in DEPLOYMENT.md has had nothing to print.
+
+A second migration cannot fix this: on a fresh install migrations run
+*before* the seeder, so it would be deleted too.
+
+- [x] 9.1.1 `AzimioAttributeSeeder` — every Azimio-added attribute in one
+      place, idempotent via `updateOrInsert` keyed on `(code, entity_type)`,
+      safe to run any number of times.
+- [x] 9.1.2 Run it on `krayin.installed` (the event Installer.php:315 already
+      dispatches) so a fresh install gets the attributes *after* the seeder
+      has finished deleting.
+- [x] 9.1.3 A migration that calls the same seeder, to repair databases that
+      already exist — production az1 among them.
+- [x] 9.1.4 A test that fails if the attributes are missing, so this cannot
+      regress silently a third time.
+
+### 9.2 Contact and company profile fields
+
+- [x] 9.2.1 **Organizations**: `phone`, `phone2`, `email`, `tin`, `vrn`,
+      `business_type` (select), `location`. The table today has only
+      `name`, `address` and `user_id` — a company profile with no phone
+      number or email at all.
+- [x] 9.2.2 **Business type** options for the TZ market, seeded as
+      `attribute_options` and translatable.
+- [x] 9.2.3 **Persons**: NOT adding `phone`/`phone2`. Persons already have
+      `contact_numbers`, a multi-value phone field, and it is what the whole
+      SMS module reads (ComposeController, BulkController, WorkflowSms,
+      SmsChannel, InboundController). A parallel pair of fields would be a
+      second source of truth that every SMS path silently ignores. Relabel
+      and make sure two numbers are easy to enter instead.
+      **Flagged for review — say the word and they get added properly,
+      meaning SMS recipient resolution reads them too.**
+
+### 9.3 Staff phone numbers
+
+- [~] 9.3.1 `users.phone` + `users.phone2` as real columns (users is not an
+      attribute entity), on the user create/edit form and profile.
+- [ ] 9.3.2 This unblocks the per-user staff alert SMS left over from 8.20,
+      which was blocked on exactly this column.
+
+### 9.4 Services module
+
+- [ ] 9.4.1 A Services module alongside Products: name, description, code,
+      price, unit (hour/day/month/fixed), taxable, active.
+- [ ] 9.4.2 Services are sellable on quotes the same way products are.
+- [ ] 9.4.3 Tenant-scoped (`TenantTables::STRICT`), ACL keys, en/sw strings,
+      DataGrid, tests — the Phase 3/6 checklist, not retrofitted.
+
+### 9.5 SMS provider setup is re-asked every time — **BUG**
+
+`SmsSettingsController::store()` validates `api_key` and `secret_key` as
+`required` on every save, and the credentials are `$hidden` on the model, so
+the form cannot show them back. Changing only a sender name means retyping
+an API secret the tenant may not have kept.
+
+- [x] 9.5.1 Keep the stored credentials when the fields are left blank;
+      require them only when there is no profile yet, or the driver changed.
+- [x] 9.5.2 Show that credentials are saved (masked, never the value) with a
+      "replace" affordance, so the state is obvious.
+- [x] 9.5.3 Re-verify against the provider only when something that affects
+      authentication actually changed — not on every unrelated save.
+
+### 9.6 Carried forward
+
+- [ ] 9.6.1 5.1 refinement: TZ-format (07XX/06XX) client-side rule, +255 prefix.
+- [ ] 9.6.2 5.5 refinement: auto-calculate 18% VAT toggle on the quote form.
+- [ ] 9.6.3 5.7 refinement: audit date display for `dd/mm/yyyy` consistency.
+- [ ] 9.6.4 5.6 low-bandwidth audit.

@@ -284,8 +284,12 @@ return [
             'provider'         => 'Provider',
             'api-key'          => 'API key',
             'secret-key'       => 'API secret',
-            'credit-balance'   => 'Credit balance',
-            'provider-balance' => 'Balance at your provider',
+            // 9.5.2: shown when credentials are already stored. The value
+            // itself is never rendered -- :hint is a masked fragment.
+            'credentials-stored'    => 'API credentials are saved (:hint). Leave the fields below blank to keep them.',
+            'leave-blank-to-keep'   => 'Leave blank to keep the saved value',
+            'credit-balance'        => 'Credit balance',
+            'provider-balance'      => 'Balance at your provider',
 
             'currently-active' => 'Currently active',
             'use-platform'     => 'Switch to platform credits',

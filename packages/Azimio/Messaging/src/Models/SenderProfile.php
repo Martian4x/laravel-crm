@@ -74,4 +74,42 @@ class SenderProfile extends Model
     {
         return $this->status->canSend();
     }
+
+    /**
+     * Whether this profile already holds usable provider credentials.
+     *
+     * This is what lets the settings form stop demanding an API key and
+     * secret on every single save (9.5). The values themselves are never
+     * shown back -- they are encrypted and `$hidden` -- so without a way to
+     * ask "are they already there?", the only honest thing the form could
+     * do was mark both fields required and make a tenant retype a secret
+     * they may no longer have, just to correct a sender name.
+     */
+    public function hasCredentials(): bool
+    {
+        $credentials = $this->credentials ?? [];
+
+        return filled($credentials['api_key'] ?? null)
+            && filled($credentials['secret_key'] ?? null);
+    }
+
+    /**
+     * A masked hint, safe to render: "ab••••••yz".
+     *
+     * Enough to recognise which key is stored without disclosing it.
+     */
+    public function credentialHint(): ?string
+    {
+        $key = $this->credentials['api_key'] ?? null;
+
+        if (! filled($key)) {
+            return null;
+        }
+
+        if (strlen($key) <= 6) {
+            return str_repeat('•', strlen($key));
+        }
+
+        return substr($key, 0, 2).str_repeat('•', 6).substr($key, -2);
+    }
 }

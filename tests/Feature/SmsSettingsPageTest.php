@@ -99,13 +99,20 @@ it('activates an own provider whose credentials verify', function () {
 it('refuses to activate a sender name the provider does not know', function () {
     // An unregistered sender ID fails every send, so it must not be
     // possible to switch into that state.
+    SenderProfile::withoutTenancy()->where('tenant_id', smsTenant()->id)->delete();
+
     saveOwnProvider('NOTREAL')
         ->assertRedirect(route('admin.sms.settings.index'))
         ->assertSessionHas('error');
 
     $profile = SenderProfile::withoutTenancy()->where('tenant_id', smsTenant()->id)->first();
 
-    expect($profile->status)->toBe(SenderProfileStatus::Pending)
+    // 9.5.3 changed this: verification now runs BEFORE anything is written,
+    // so a refused setup leaves NO profile rather than a Pending one. The
+    // old flow saved Pending first and called the provider second, which
+    // meant a bad edit downgraded a previously working sender and stopped
+    // the tenant sending at all.
+    expect($profile)->toBeNull()
         ->and(smsTenant()->fresh()->sms_mode)->toBe('platform');
 });
 
@@ -169,4 +176,100 @@ it('queues a platform test send when credits are available', function () {
 
 it('does not serve the settings page to a guest', function () {
     test()->get(route('admin.sms.settings.index'))->assertRedirect();
+});
+
+/**
+ * 9.5 — the provider setup must be asked for ONCE.
+ *
+ * Reported from use: every save demanded the API key and secret again.
+ * They are encrypted and hidden, so the form could not show them back, and
+ * `required` meant correcting a sender name cost you an API secret you may
+ * never have kept a copy of.
+ */
+function ownProfileOf(): ?SenderProfile
+{
+    return SenderProfile::withoutTenancy()
+        ->where('tenant_id', smsTenant()->id)
+        ->orderByDesc('id')
+        ->first();
+}
+
+function platformSenderName(): string
+{
+    // The log driver reports exactly this one name as registered, so it is
+    // the only sender name that verifies in tests.
+    return (string) config('messaging.platform.sender_name');
+}
+
+it('keeps the stored credentials when the key fields are left blank', function () {
+    saveOwnProvider(platformSenderName(), 'live-key-123', 'live-secret-456');
+
+    expect(ownProfileOf()->credentials['api_key'])->toBe('live-key-123');
+
+    // Save again with the key fields omitted entirely -- what the form now
+    // submits when the tenant only touched the sender name.
+    test()->actingAs(smsAdmin())->post(route('admin.sms.settings.store'), [
+        'driver'      => 'log',
+        'sender_name' => platformSenderName(),
+    ])->assertRedirect();
+
+    $profile = ownProfileOf();
+
+    expect($profile->credentials['api_key'])->toBe('live-key-123')
+        ->and($profile->credentials['secret_key'])->toBe('live-secret-456')
+        ->and($profile->status)->toBe(SenderProfileStatus::Approved);
+});
+
+it('still demands credentials the first time, when there is nothing stored', function () {
+    SenderProfile::withoutTenancy()->where('tenant_id', smsTenant()->id)->delete();
+
+    test()->actingAs(smsAdmin())
+        ->post(route('admin.sms.settings.store'), [
+            'driver'      => 'log',
+            'sender_name' => platformSenderName(),
+        ])
+        ->assertSessionHasErrors(['api_key', 'secret_key']);
+});
+
+it('leaves a working provider alone when the new details fail verification', function () {
+    saveOwnProvider(platformSenderName(), 'good-key', 'good-secret');
+
+    $before = ownProfileOf();
+
+    // A sender name the provider does not know. The old flow wrote the
+    // profile as Pending BEFORE calling the provider, so this left a
+    // working setup unable to send. A failed edit should cost the edit,
+    // nothing else.
+    test()->actingAs(smsAdmin())->post(route('admin.sms.settings.store'), [
+        'driver'      => 'log',
+        'sender_name' => 'NOTREGISTR',
+    ])->assertRedirect();
+
+    $after = ownProfileOf();
+
+    expect($after->id)->toBe($before->id)
+        ->and($after->sender_name)->toBe(platformSenderName())
+        ->and($after->status)->toBe(SenderProfileStatus::Approved)
+        ->and($after->credentials['api_key'])->toBe('good-key');
+});
+
+it('replaces the credentials when new ones are actually supplied', function () {
+    saveOwnProvider(platformSenderName(), 'old-key', 'old-secret');
+
+    saveOwnProvider(platformSenderName(), 'new-key', 'new-secret');
+
+    expect(ownProfileOf()->credentials['api_key'])->toBe('new-key')
+        ->and(ownProfileOf()->credentials['secret_key'])->toBe('new-secret');
+});
+
+it('tells the tenant the credentials are saved without showing them', function () {
+    saveOwnProvider(platformSenderName(), 'secret-key-value', 'secret-secret-value');
+
+    $response = test()->actingAs(smsAdmin())->get(route('admin.sms.settings.index'));
+
+    $response->assertOK()
+        ->assertDontSee('secret-key-value')
+        ->assertDontSee('secret-secret-value')
+        // A masked hint, so the state is visible without disclosure.
+        ->assertSee('se••••••ue');
 });

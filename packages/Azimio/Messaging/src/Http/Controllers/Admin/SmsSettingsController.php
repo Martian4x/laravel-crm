@@ -55,29 +55,54 @@ class SmsSettingsController extends Controller
      */
     public function store()
     {
+        $tenant = $this->tenant();
+        $existing = $this->ownProfile();
+
+        // 9.5.1: credentials are encrypted and $hidden, so the form cannot
+        // render them back. Marking both fields `required` therefore meant a
+        // tenant correcting a sender name had to produce an API secret
+        // again -- one they may never have kept a copy of. Blank now means
+        // "keep what is stored", and they are only demanded when there is
+        // nothing stored to keep.
+        $keyRule = $existing?->hasCredentials() ? 'nullable' : 'required';
+
         $validated = request()->validate([
             'driver'      => 'required|in:'.implode(',', array_keys($this->availableDrivers())),
             'sender_name' => 'required|string|max:11',
-            'api_key'     => 'required|string|max:255',
-            'secret_key'  => 'required|string|max:255',
+            'api_key'     => $keyRule.'|string|max:255',
+            'secret_key'  => $keyRule.'|string|max:255',
         ]);
 
-        $tenant = $this->tenant();
-        $profile = $this->ownProfile() ?? new SenderProfile;
+        $stored = $existing?->credentials ?? [];
 
-        $profile->forceFill([
+        // `?? null` before `?:` on purpose: a nullable field that was not
+        // submitted is ABSENT from the validated array, not null, and
+        // reading it directly is an "Undefined array key" crash. This exact
+        // shape has bitten this codebase four times now.
+        $credentials = [
+            'api_key'    => ($validated['api_key'] ?? null) ?: ($stored['api_key'] ?? null),
+            'secret_key' => ($validated['secret_key'] ?? null) ?: ($stored['secret_key'] ?? null),
+        ];
+
+        // 9.5.3: verify BEFORE writing anything.
+        //
+        // The old flow saved the profile as Pending and only then called the
+        // provider, so a typo -- or a sender name the operator had not
+        // registered yet -- left a previously working setup downgraded to
+        // Pending and unable to send anything at all. A failed edit should
+        // cost you the edit, not your ability to send.
+        //
+        // The candidate is never saved; it exists only to resolve a driver.
+        $candidate = new SenderProfile;
+
+        $candidate->forceFill([
             'tenant_id'   => $tenant->id,
-            'label'       => trans('messaging::app.sms.settings.own-label'),
             'sender_name' => $validated['sender_name'],
             'driver'      => $validated['driver'],
-            'credentials' => [
-                'api_key'    => $validated['api_key'],
-                'secret_key' => $validated['secret_key'],
-            ],
-            'status' => SenderProfileStatus::Pending->value,
-        ])->save();
+            'credentials' => $credentials,
+        ]);
 
-        $failure = $this->verify($profile);
+        $failure = $this->verify($candidate);
 
         if ($failure !== null) {
             session()->flash('error', $failure);
@@ -85,7 +110,14 @@ class SmsSettingsController extends Controller
             return redirect()->route('admin.sms.settings.index');
         }
 
+        $profile = $existing ?? new SenderProfile;
+
         $profile->forceFill([
+            'tenant_id'   => $tenant->id,
+            'label'       => trans('messaging::app.sms.settings.own-label'),
+            'sender_name' => $validated['sender_name'],
+            'driver'      => $validated['driver'],
+            'credentials' => $credentials,
             'status'      => SenderProfileStatus::Approved->value,
             'approved_at' => now(),
             'is_default'  => true,

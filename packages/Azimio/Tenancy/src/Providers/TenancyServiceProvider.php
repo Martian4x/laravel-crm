@@ -5,6 +5,7 @@ namespace Azimio\Tenancy\Providers;
 use Azimio\Tenancy\Console\Commands\AdoptOrphanData;
 use Azimio\Tenancy\Console\Commands\CreateTenant;
 use Azimio\Tenancy\Console\Commands\ExpireTrials;
+use Azimio\Tenancy\Database\Seeders\AzimioAttributeSeeder;
 use Azimio\Tenancy\Http\Controllers\OnboardingController;
 use Azimio\Tenancy\Http\Controllers\RegisterController;
 use Azimio\Tenancy\Http\Controllers\TenantController;
@@ -61,6 +62,24 @@ class TenancyServiceProvider extends ServiceProvider
         $this->registerRoutes();
 
         Event::listen('datagrid.*', ScopeDataGridToTenant::class);
+
+        /**
+         * 9.1: re-apply our attributes after a fresh install.
+         *
+         * `krayin-crm:install` runs `migrate:fresh` and THEN the seeders,
+         * and AttributeSeeder's first act is to delete every row in
+         * `attributes`. Anything a migration put there is therefore gone by
+         * the time the install finishes, with the migration still recorded
+         * as run and nothing saying otherwise. That is how the TIN/VRN and
+         * mobile-money fields stayed ticked off for months while never
+         * existing on an installed system.
+         *
+         * `krayin.installed` fires after the seeders (Installer.php:315),
+         * which is the first moment these rows can survive.
+         */
+        Event::listen('krayin.installed', function () {
+            app(AzimioAttributeSeeder::class)->run();
+        });
 
         /**
          * 7.6: the first-login checklist, injected through Krayin's own

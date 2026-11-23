@@ -117,17 +117,37 @@
                         </span>
                     </label>
 
+                    {{--
+                        9.5.2: once credentials are stored, these fields are
+                        OPTIONAL and blank means "keep what is saved". The
+                        values can never be shown back -- they are encrypted
+                        and hidden on the model -- so the form says that
+                        they exist and shows a masked hint instead, rather
+                        than presenting two empty boxes that look unset.
+                    --}}
+                    @php($savedCredentials = $profile?->hasCredentials() ?? false)
+
+                    @if ($savedCredentials)
+                        <div class="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+                            @lang('messaging::app.sms.settings.credentials-stored', ['hint' => $profile->credentialHint()])
+                        </div>
+                    @endif
+
                     <label class="text-xs font-semibold text-gray-500">
                         @lang('messaging::app.sms.settings.api-key')
 
-                        <input type="password" name="api_key" required autocomplete="off"
+                        <input type="password" name="api_key" autocomplete="off"
+                            @required(! $savedCredentials)
+                            placeholder="{{ $savedCredentials ? trans('messaging::app.sms.settings.leave-blank-to-keep') : '' }}"
                             class="mt-1 w-full rounded-md border px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300" />
                     </label>
 
                     <label class="text-xs font-semibold text-gray-500">
                         @lang('messaging::app.sms.settings.secret-key')
 
-                        <input type="password" name="secret_key" required autocomplete="off"
+                        <input type="password" name="secret_key" autocomplete="off"
+                            @required(! $savedCredentials)
+                            placeholder="{{ $savedCredentials ? trans('messaging::app.sms.settings.leave-blank-to-keep') : '' }}"
                             class="mt-1 w-full rounded-md border px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300" />
                     </label>
 
