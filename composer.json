@@ -59,6 +59,7 @@
         "psr-4": {
             "App\\": "app/",
             "Azimio\\Messaging\\": "packages/Azimio/Messaging/src",
+            "Azimio\\Services\\": "packages/Azimio/Services/src",
             "Azimio\\Tenancy\\": "packages/Azimio/Tenancy/src",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",

@@ -5,6 +5,7 @@ use App\Providers\AuthServiceProvider;
 use App\Providers\EventServiceProvider;
 use App\Providers\RouteServiceProvider;
 use Azimio\Messaging\Providers\MessagingServiceProvider;
+use Azimio\Services\Providers\ServicesServiceProvider;
 use Azimio\Tenancy\Providers\TenancyServiceProvider;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\ServiceProvider;
@@ -247,6 +248,7 @@ return [
          */
         TenancyServiceProvider::class,
         MessagingServiceProvider::class,
+        ServicesServiceProvider::class,
     ])->toArray(),
 
     /*

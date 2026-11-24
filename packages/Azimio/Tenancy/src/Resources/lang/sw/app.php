@@ -101,6 +101,8 @@ return [
         'edit-title'          => 'Hariri Mtumiaji',
         'name'                => 'Jina',
         'email'               => 'Barua Pepe',
+        'phone'               => 'Namba ya simu',
+        'phone2'              => 'Simu ya pili',
         'password'            => 'Nywila',
         'confirm-password'    => 'Thibitisha Nywila',
         'tenant'              => 'Kampuni',

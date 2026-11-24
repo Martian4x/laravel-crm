@@ -219,3 +219,77 @@ it('clears the locale back to null when an empty value is submitted', function (
 
     expect($user->fresh()->locale)->toBeNull();
 });
+
+/**
+ * 9.3 — staff phone numbers.
+ *
+ * `users` is not one of Krayin's attribute entities, so these are real
+ * columns. They are also what 8.20's per-user staff alert SMS was blocked
+ * on: there was nowhere to put a number to send the alert to.
+ */
+it('stores both staff phone numbers when creating a user', function () {
+    test()->actingAs(getDefaultAdmin())
+        ->post(route('super.users.store'), [
+            'name'      => 'Phone User',
+            'email'     => 'phone@super-panel-test.local',
+            'password'  => 'secret123',
+            'phone'     => '0712345678',
+            'phone2'    => '+255762000111',
+            'tenant_id' => twiga()->id,
+            'role_id'   => platformRoleId(),
+            'status'    => '1',
+        ])
+        ->assertRedirect(route('super.users.index'));
+
+    $user = User::withoutTenancy()->where('email', 'phone@super-panel-test.local')->first();
+
+    expect($user->phone)->toBe('0712345678')
+        ->and($user->phone2)->toBe('+255762000111');
+
+    $user->delete();
+});
+
+it('creates a user when no phone is submitted', function () {
+    // The nullable-key crash: a field absent from the request is MISSING
+    // from the validated array, not null. This codebase has shipped that
+    // bug on `locale`, on a bulk-send `name`, and on tenant `currency`.
+    test()->actingAs(getDefaultAdmin())
+        ->post(route('super.users.store'), [
+            'name'      => 'No Phone User',
+            'email'     => 'nophone@super-panel-test.local',
+            'password'  => 'secret123',
+            'tenant_id' => twiga()->id,
+            'role_id'   => platformRoleId(),
+            'status'    => '1',
+        ])
+        ->assertRedirect(route('super.users.index'));
+
+    $user = User::withoutTenancy()->where('email', 'nophone@super-panel-test.local')->first();
+
+    expect($user)->not->toBeNull()
+        ->and($user->phone)->toBeNull()
+        ->and($user->phone2)->toBeNull();
+
+    $user->delete();
+});
+
+it('renders the create and edit forms with the phone fields', function () {
+    // Rendered, not merely compiled: a Blade page can compile cleanly and
+    // still explode at render time. That happened on this project before.
+    test()->actingAs(getDefaultAdmin())
+        ->get(route('super.users.create'))
+        ->assertOK()
+        ->assertSee('name="phone"', false)
+        ->assertSee('name="phone2"', false);
+
+    $user = makeTenantUser('editphone@super-panel-test.local', twiga()->id);
+
+    $user->forceFill(['phone' => '0755000111'])->save();
+
+    test()->actingAs(getDefaultAdmin())
+        ->get(route('super.users.edit', $user->id))
+        ->assertOK()
+        ->assertSee('0755000111', false);
+
+    $user->delete();
+});

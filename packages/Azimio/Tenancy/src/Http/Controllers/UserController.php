@@ -63,6 +63,8 @@ class UserController extends Controller
             'password'  => 'required|min:6',
             'tenant_id' => 'required|integer|exists:tenants,id',
             'role_id'   => 'required|integer',
+            'phone'     => 'nullable|string|max:32',
+            'phone2'    => 'nullable|string|max:32',
             'locale'    => 'nullable|in:'.implode(',', array_keys(config('app.available_locales'))),
             'status'    => 'nullable|boolean',
         ]);
@@ -77,6 +79,8 @@ class UserController extends Controller
             'password'        => Hash::make($validated['password']),
             'tenant_id'       => $validated['tenant_id'],
             'role_id'         => $validated['role_id'],
+            'phone'           => ($validated['phone'] ?? null) ?: null,
+            'phone2'          => ($validated['phone2'] ?? null) ?: null,
             'locale'          => ($validated['locale'] ?? null) ?: null,
             'status'          => request()->boolean('status'),
             'view_permission' => 'global',
@@ -114,6 +118,8 @@ class UserController extends Controller
             'email'     => 'required|email|unique:users,email,'.$user->id,
             'tenant_id' => 'nullable|integer|exists:tenants,id',
             'role_id'   => 'required|integer',
+            'phone'     => 'nullable|string|max:32',
+            'phone2'    => 'nullable|string|max:32',
             'locale'    => 'nullable|in:'.implode(',', array_keys(config('app.available_locales'))),
             'status'    => 'nullable|boolean',
         ]);
@@ -135,6 +141,8 @@ class UserController extends Controller
         $user->forceFill([
             'name'      => $validated['name'],
             'email'     => $validated['email'],
+            'phone'     => ($validated['phone'] ?? null) ?: null,
+            'phone2'    => ($validated['phone2'] ?? null) ?: null,
             'tenant_id' => $tenantId,
             'role_id'   => $validated['role_id'],
             'locale'    => ($validated['locale'] ?? null) ?: null,

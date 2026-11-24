@@ -1428,17 +1428,17 @@ A second migration cannot fix this: on a fresh install migrations run
 
 ### 9.3 Staff phone numbers
 
-- [~] 9.3.1 `users.phone` + `users.phone2` as real columns (users is not an
+- [x] 9.3.1 `users.phone` + `users.phone2` as real columns (users is not an
       attribute entity), on the user create/edit form and profile.
-- [ ] 9.3.2 This unblocks the per-user staff alert SMS left over from 8.20,
+- [~] 9.3.2 This unblocks the per-user staff alert SMS left over from 8.20,
       which was blocked on exactly this column.
 
 ### 9.4 Services module
 
-- [ ] 9.4.1 A Services module alongside Products: name, description, code,
+- [x] 9.4.1 A Services module alongside Products: name, description, code,
       price, unit (hour/day/month/fixed), taxable, active.
 - [ ] 9.4.2 Services are sellable on quotes the same way products are.
-- [ ] 9.4.3 Tenant-scoped (`TenantTables::STRICT`), ACL keys, en/sw strings,
+- [x] 9.4.3 Tenant-scoped (`TenantTables::STRICT`), ACL keys, en/sw strings,
       DataGrid, tests — the Phase 3/6 checklist, not retrofitted.
 
 ### 9.5 SMS provider setup is re-asked every time — **BUG**

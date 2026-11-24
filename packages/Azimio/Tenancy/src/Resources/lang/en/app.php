@@ -101,6 +101,8 @@ return [
         'edit-title'          => 'Edit User',
         'name'                => 'Name',
         'email'               => 'Email',
+        'phone'               => 'Phone number',
+        'phone2'              => 'Alternate phone',
         'password'            => 'Password',
         'confirm-password'    => 'Confirm Password',
         'tenant'              => 'Company',

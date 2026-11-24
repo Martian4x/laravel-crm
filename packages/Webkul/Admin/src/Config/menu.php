@@ -127,6 +127,18 @@ return [
     ],
 
     /**
+     * Services (9.4) -- sits beside Products because that is where someone
+     * looks for "the things we sell".
+     */
+    [
+        'key'        => 'services',
+        'name'       => 'services::app.title',
+        'route'      => 'admin.services.index',
+        'sort'       => 8,
+        'icon-class' => 'icon-settings',
+    ],
+
+    /**
      * Settings.
      */
     [

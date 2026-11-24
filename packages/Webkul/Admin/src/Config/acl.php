@@ -202,6 +202,30 @@ return [
         'route' => 'admin.products.view',
         'sort'  => 3,
     ], [
+        /**
+         * Services (9.4). Mirrors the products keys so a role that can
+         * manage one can be given the other without a new vocabulary.
+         */
+        'key'   => 'services',
+        'name'  => 'services::app.title',
+        'route' => 'admin.services.index',
+        'sort'  => 8,
+    ], [
+        'key'   => 'services.create',
+        'name'  => 'admin::app.acl.create',
+        'route' => ['admin.services.create', 'admin.services.store'],
+        'sort'  => 1,
+    ], [
+        'key'   => 'services.edit',
+        'name'  => 'admin::app.acl.edit',
+        'route' => ['admin.services.edit', 'admin.services.update', 'admin.services.toggle'],
+        'sort'  => 2,
+    ], [
+        'key'   => 'services.delete',
+        'name'  => 'admin::app.acl.delete',
+        'route' => ['admin.services.delete'],
+        'sort'  => 3,
+    ], [
         'key'   => 'settings',
         'name'  => 'admin::app.acl.settings',
         'route' => 'admin.settings.index',

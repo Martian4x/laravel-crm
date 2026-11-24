@@ -53,6 +53,18 @@
                 </div>
 
                 <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">@lang('azimio::app.users.phone')</label>
+                    <input type="tel" name="phone" value="{{ old('phone', $user->phone) }}"
+                        class="w-full rounded-md border px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300" />
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">@lang('azimio::app.users.phone2')</label>
+                    <input type="tel" name="phone2" value="{{ old('phone2', $user->phone2) }}"
+                        class="w-full rounded-md border px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300" />
+                </div>
+
+                <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">@lang('azimio::app.users.tenant')</label>
                     @if ($user->is_super_admin)
                         <input type="text" value="@lang('azimio::app.users.no-tenant')" disabled

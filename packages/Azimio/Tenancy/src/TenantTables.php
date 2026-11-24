@@ -20,6 +20,7 @@ class TenantTables
         'organizations',
         'persons',
         'products',
+        'services',
         'quotes',
         'sms_batches',
         'sms_credit_ledger',
