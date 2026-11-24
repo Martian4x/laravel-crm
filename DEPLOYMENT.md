@@ -449,6 +449,17 @@ ssh az1 'ls -1dt /var/www/clients/releases/*/ | head -3'
 ssh az1 'ln -sfn /var/www/clients/releases/<TIMESTAMP> /var/www/clients/current && systemctl reload php8.4-fpm && systemctl restart clients-queue'
 ```
 
+### Release history
+
+Newest first. A release directory is only a rollback target while it is still
+on disk — the deploy keeps the last five.
+
+| Release | Commit | Contents |
+|---|---|---|
+| `20261124065008` | `42fb35f2` | 9.4.2 — services sellable on quotes (`quote_items.service_id`) |
+| `20261124045933` | `9388e046` | 9.1–9.4.1 — attribute repair, company/staff fields, Services module, SMS credential retention |
+| `20261120031121` | — | cPanel data migration cutover |
+
 ### Hostnames and TLS
 
 | Hostname | DNS | TLS | Serves |
