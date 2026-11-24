@@ -2,7 +2,11 @@
 
 return [
     'title'        => 'Services',
-    'subtitle'     => 'What you sell that is not stock — billed by time or as a fixed fee.',
+    // Appended to a service name in the quote lookup so a seller can
+    // tell it apart from a product of the same name.
+    'lookup-tag'         => 'service',
+    'quote-line-invalid' => 'Choose a product, or a service that is still available.',
+    'subtitle'           => 'What you sell that is not stock — billed by time or as a fixed fee.',
 
     'create'       => 'Add service',
     'edit'         => 'Edit service',

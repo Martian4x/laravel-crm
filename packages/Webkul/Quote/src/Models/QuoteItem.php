@@ -26,8 +26,20 @@ class QuoteItem extends Model implements QuoteItemContract
         'tax_amount',
         'total',
         'product_id',
+        // AZIMIO 9.4.2: a quote line may be a service instead of a product.
+        // Populated by the hook in ServicesServiceProvider, which unpacks
+        // the `svc-12` reference the quote form's lookup submits.
+        'service_id',
         'quote_id',
     ];
+
+    /**
+     * AZIMIO 9.4.2: the service this line sells, when it sells one.
+     */
+    public function service()
+    {
+        return $this->belongsTo(\Azimio\Services\Models\Service::class);
+    }
 
     /**
      * Get the quote record associated with the quote item.

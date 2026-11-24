@@ -2,6 +2,7 @@
 
 namespace Webkul\Admin\Http\Controllers\Quote;
 
+use Azimio\Services\Rules\ProductOrService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -205,7 +206,14 @@ class QuoteController extends Controller
     {
         $this->validate(request(), [
             'items'                   => 'required|array',
-            'items.*.product_id'      => 'required|exists:products,id',
+            // AZIMIO 9.4.2: was `exists:products,id`, which is what made
+            // services unsellable. The quote form's lookup submits whatever
+            // id the search returned into product_id, so a service arrives
+            // here namespaced as `svc-12`. ProductOrService accepts either,
+            // and resolves both through the same parser the save-time hook
+            // uses, so a reference cannot pass validation and then fail to
+            // be understood when it is written.
+            'items.*.product_id'      => ['required', new ProductOrService],
             'items.*.quantity'        => 'required|numeric|min:0',
             'items.*.price'           => 'required|numeric|min:0',
             'items.*.total'           => 'required|numeric|min:0',

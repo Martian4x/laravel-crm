@@ -1,8 +1,10 @@
 <?php
 
 return [
-    'title'        => 'Huduma',
-    'subtitle'     => 'Unachouza ambacho si bidhaa — kinalipiwa kwa muda au kwa ada maalum.',
+    'title'              => 'Huduma',
+    'lookup-tag'         => 'huduma',
+    'quote-line-invalid' => 'Chagua bidhaa, au huduma ambayo bado inapatikana.',
+    'subtitle'           => 'Unachouza ambacho si bidhaa — kinalipiwa kwa muda au kwa ada maalum.',
 
     'create'       => 'Ongeza huduma',
     'edit'         => 'Hariri huduma',

@@ -1437,7 +1437,16 @@ A second migration cannot fix this: on a fresh install migrations run
 
 - [x] 9.4.1 A Services module alongside Products: name, description, code,
       price, unit (hour/day/month/fixed), taxable, active.
-- [ ] 9.4.2 Services are sellable on quotes the same way products are.
+- [x] 9.4.2 Services are sellable on quotes the same way products are.
+      Services are merged into the quote item lookup carrying a NAMESPACED
+      id (`svc-12`). The lookup writes whatever id it was given straight
+      into the line's `product_id` — its hidden input is
+      `v-model="selectedItem.id"` and there is no second field — so the
+      alternative was rewriting upstream Vue. Unpacked in
+      QuoteItemRepository, validated by the ProductOrService rule, both
+      going through the one QuoteLineRef parser so they cannot disagree.
+      A service line stores service_id with product_id NULL, and the
+      denormalised sku/name mean the quote PDF needed no change at all.
 - [x] 9.4.3 Tenant-scoped (`TenantTables::STRICT`), ACL keys, en/sw strings,
       DataGrid, tests — the Phase 3/6 checklist, not retrofitted.
 

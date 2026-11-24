@@ -2,6 +2,7 @@
 
 namespace Webkul\Admin\Http\Controllers\Products;
 
+use Azimio\Services\Support\ServiceLookup;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Response;
@@ -157,7 +158,27 @@ class ProductController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return ProductResource::collection($products);
+        /**
+         * AZIMIO 9.4.2: services are sellable on quotes, and this is the
+         * endpoint the quote form's lookup reads.
+         *
+         * They are merged in here rather than given their own picker
+         * because the lookup puts the chosen row's `id` directly into the
+         * line's `product_id` — its hidden input is
+         * `v-model="selectedItem.id"` and there is no second field to use.
+         * Service rows therefore carry a namespaced id (`svc-12`), which
+         * ProductOrService validates and the hook in ServicesServiceProvider
+         * unpacks before the row is written.
+         *
+         * Products stay first: they are the commoner case, and merging
+         * rather than replacing means nothing about product search changes.
+         */
+        $results = array_merge(
+            ProductResource::collection($products)->resolve(),
+            ServiceLookup::matching(request('query')),
+        );
+
+        return JsonResource::collection($results);
     }
 
     /**
